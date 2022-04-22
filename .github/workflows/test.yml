@@ -1,5 +1,5 @@
 # This work will only work when there is a change in theme files.
-name: StageCompleteSiteBuild
+name: Test_Checkout_other_Pvt_Repo
 
 # Controls when the action will run. 
 on:

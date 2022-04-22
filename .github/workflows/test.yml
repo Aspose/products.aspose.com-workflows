@@ -72,4 +72,4 @@ jobs:
         include: "_index.md" # Will match all README.md files in any nested directory
 
     - name: Build 3d
-      run: hugo --config "./config-i18n.toml" -c "content/3d" -b "https://products-qa.aspose.com/3d" --cleanDestinationDir --minify
+      run: hugo --config "./config00-i18n.toml" -c "content/3d" -b "https://products-qa.aspose.com/3d" --cleanDestinationDir --minify

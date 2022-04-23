@@ -39,7 +39,7 @@ jobs:
     - name: Build Email
       run: hugo --config "./config-prod.toml" -c "content/email" -b "https://products.aspose.com/email" --cleanDestinationDir --minify
     - name: Deploy Email to S3
-      run: hugo deploy --config "./confi-prod.toml" --maxDeletes=-1 --target "email" --force
+      run: hugo deploy --config "./config-prod.toml" --maxDeletes=-1 --target "email" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

@@ -1,8 +1,8 @@
-name: Staging-BarCode
+name: Production-HTML
 
 on:
   repository_dispatch:
-    types: [staging-complete]
+    types: [production-complete]
   workflow_dispatch:
 
 jobs:
@@ -30,22 +30,16 @@ jobs:
         find: "url:"
         replace: "url_ignore:"
         include: "_index.md"
-    - name: Find and replace domain name
-      uses: jacobtomlinson/gha-find-replace@master
-      with:
-        find: "products.aspose.com"
-        replace: "products-qa.aspose.com"
-        include: "_index.md"
     - name: Find and replace image url domain
       uses: jacobtomlinson/gha-find-replace@master
       with:
         find: "logoImageSrc=\"https://www.aspose.cloud/"
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
-    - name: Build BarCode
-      run: hugo --config "./config.toml" -c "content/barcode" -b "https://products-qa.aspose.com/barcode" --cleanDestinationDir --minify
-    - name: Deploy BarCode to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "barcode" --force
+    - name: Build HTML
+      run: hugo --config "./config-prod.toml" -c "content/html" -b "https://products.aspose.com/html" --cleanDestinationDir --minify
+    - name: Deploy HTML to S3
+      run: hugo deploy --config "./config-prod.toml" --maxDeletes=-1 --target "html" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

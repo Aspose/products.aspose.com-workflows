@@ -1,0 +1,15 @@
+name: 02-Production-Complete
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Dispatch Events
+      uses: peter-evans/repository-dispatch@v1
+      with:
+          token:  ${{ secrets.REPO_TOKEN }}
+          event-type: production-complete

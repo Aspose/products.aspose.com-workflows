@@ -1,4 +1,4 @@
-name: Staging-ZIP
+name: Staging-Cells
 
 on:
   repository_dispatch:
@@ -42,10 +42,10 @@ jobs:
         find: "logoImageSrc=\"https://www.aspose.cloud/"
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
-    - name: Build ZIP
-      run: hugo --config "./config.toml" -c "content/zip" -b "https://products-qa.aspose.com/zip" --cleanDestinationDir --minify
-    - name: Deploy ZIP to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "zip" --force
+    - name: Build Cells
+      run: hugo --config "./config-i18n.toml" -c "content/cells" -b "https://products-qa.aspose.com/cells" --cleanDestinationDir --minify
+    - name: Deploy Cells to S3
+      run: hugo deploy --config "./config-i18n.toml" --maxDeletes=-1 --target "cells" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

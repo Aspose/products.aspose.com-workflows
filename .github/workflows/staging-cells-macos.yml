@@ -1,8 +1,6 @@
-name: Staging-Cells
+name: Staging-Cells-macOS
 
 on:
-  repository_dispatch:
-    types: [staging-complete]
   workflow_dispatch:
 
 jobs:

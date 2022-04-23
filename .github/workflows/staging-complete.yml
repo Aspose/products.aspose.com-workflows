@@ -1,4 +1,4 @@
-name: 01-staging-complete
+name: 01-Staging-Complete
 
 on:
   workflow_dispatch:

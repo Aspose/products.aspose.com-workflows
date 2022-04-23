@@ -1,4 +1,4 @@
-name: Staging-Words
+name: Staging-3D
 
 on:
   repository_dispatch:
@@ -42,18 +42,10 @@ jobs:
         find: "logoImageSrc=\"https://www.aspose.cloud/"
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
-    - name: Build Words
-      run: hugo --config "./config.toml" -c "content/words" -b "https://products-qa.aspose.com/words" --cleanDestinationDir --minify
-    - name: Deploy Words to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "words" --force
+    - name: Build BarCode
+      run: hugo --config "./config.toml" -c "content/barcode" -b "https://products-qa.aspose.com/barcode" --cleanDestinationDir --minify
+    - name: Deploy BarCode to S3
+      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "barcode" --force
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
-    - name: Invalidate CloudFront
-      uses: chetan/invalidate-cloudfront-action@v2
-      env:
-        DISTRIBUTION: ${{ secrets.AWS_DISTRIBUTION_STAGE }}
-        PATHS: "/words/*"
-        AWS_REGION: "us-west-2"
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

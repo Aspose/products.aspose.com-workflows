@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build Total
-      run: hugo --config "./config-i18n.toml" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
+      run: hugo --config "./config-i18n-total.toml" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
     - name: Deploy Total to S3
-      run: hugo deploy --config "./config-i18n.toml" --maxDeletes=-1 --target "total" --force
+      run: hugo deploy --config "./config-i18n-total.toml" --maxDeletes=-1 --target "total" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

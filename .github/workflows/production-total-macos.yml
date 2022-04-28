@@ -1,8 +1,6 @@
 name: Production-Total-macOS
 
 on:
-  repository_dispatch:
-    types: [production-complete]
   workflow_dispatch:
 
 jobs:

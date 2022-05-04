@@ -44,7 +44,7 @@ jobs:
         include: "_index.md"
     - name: Build Imaging
       timeout-minutes: 60
-      run: hugo --config "./config.toml" -c "content/imaging" -b "https://products-qa.aspose.com/imaging" --cleanDestinationDir --minify --verbose
+      run: hugo --config "./config.toml" -c "content/imaging" -b "https://products-qa.aspose.com/imaging" --cleanDestinationDir --minify --verbose --printMemoryUsage
     - name: Deploy Imaging to S3
       run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "imaging" --force
       env:

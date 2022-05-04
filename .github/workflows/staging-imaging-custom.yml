@@ -6,6 +6,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main

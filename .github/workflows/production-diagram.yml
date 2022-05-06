@@ -37,9 +37,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build Diagram
-      run: hugo --config "configs/production-diagram.toml" -c "content/diagram" -b "https://products.aspose.com/diagram" --cleanDestinationDir --minify
+      run: hugo --config "configs/diagram.toml" -c "content/diagram" -b "https://products.aspose.com/diagram" --cleanDestinationDir --minify
     - name: Deploy Diagram to S3
-      run: hugo deploy --config "configs/production-diagram.toml" --maxDeletes=-1 --target "diagram" --force
+      run: hugo deploy --config "configs/diagram.toml" --maxDeletes=-1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

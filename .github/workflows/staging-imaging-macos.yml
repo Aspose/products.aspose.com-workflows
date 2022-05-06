@@ -12,7 +12,7 @@ jobs:
       with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          ref: samer.el-khatib.IMAGINGNET-5114_all
+          ref: samer.el-khatib.IMAGINGNET-5114_3
           fetch-depth: 0 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
@@ -26,9 +26,9 @@ jobs:
     - name: Find and replace domain name
       run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
     - name: Build Imaging
-      run: hugo --config "./config.toml" -c "content/imaging" -b "https://products-qa.aspose.com/imaging" --cleanDestinationDir --minify
+      run: hugo --config "./config-imaging.toml" -c "content/imaging" -b "https://products-qa.aspose.com/imaging" --cleanDestinationDir --minify
     - name: Deploy Imaging to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "imaging" --force
+      run: hugo deploy --config "./config-imaging.toml" --maxDeletes=-1 --target "imaging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

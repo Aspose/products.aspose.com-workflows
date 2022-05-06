@@ -1,11 +1,13 @@
-name: Staging-Total
+name: Staging-Total-macOS
 
 on:
+  repository_dispatch:
+    types: [staging-complete]
   workflow_dispatch:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main
@@ -23,27 +25,13 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      uses: jacobtomlinson/gha-find-replace@master
-      with:
-        find: "url:"
-        replace: "url_ignore:"
-        include: "_index.md"
+      run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Find and replace domain name
-      uses: jacobtomlinson/gha-find-replace@master
-      with:
-        find: "products.aspose.com"
-        replace: "products-qa.aspose.com"
-        include: "_index.md"
-    - name: Find and replace image url domain
-      uses: jacobtomlinson/gha-find-replace@master
-      with:
-        find: "logoImageSrc=\"https://www.aspose.cloud/"
-        replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
-        include: "_index.md"
+      run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
     - name: Build Total
-      run: hugo --config "./config-i18n-total.toml" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
+      run: hugo --config "configs/total.toml" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
     - name: Deploy Total to S3
-      run: hugo deploy --config "./config-i18n-total.toml" --maxDeletes=-1 --target "total" --force
+      run: hugo deploy --config "configs/total.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

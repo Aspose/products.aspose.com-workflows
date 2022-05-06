@@ -1,4 +1,4 @@
-name: Staging-Total-macOS
+name: Staging-Cells-macOS
 
 on:
   repository_dispatch:
@@ -28,10 +28,10 @@ jobs:
       run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Find and replace domain name
       run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
-    - name: Build Total
-      run: hugo --config "configs/staging-total.toml" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
-    - name: Deploy Total to S3
-      run: hugo deploy --config "configs/staging-total.toml" --maxDeletes=-1 --target "total" --force
+    - name: Build Cells
+      run: hugo --config "configs/cells.toml" -c "content/cells" -b "https://products-qa.aspose.com/cells" --cleanDestinationDir --minify
+    - name: Deploy Cells to S3
+      run: hugo deploy --config "configs/cells.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

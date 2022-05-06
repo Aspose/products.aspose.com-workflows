@@ -27,9 +27,9 @@ jobs:
     - name: Find and replace url param in frontmatter
       run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Build Cells
-      run: hugo --config "configs/production-cells.toml" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
+      run: hugo --config "configs/cells.toml" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
     - name: Deploy Cells to S3
-      run: hugo deploy --config "configs/production-cells.toml" --maxDeletes=-1 --target "cells" --force
+      run: hugo deploy --config "configs/cells.toml" --maxDeletes=-1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

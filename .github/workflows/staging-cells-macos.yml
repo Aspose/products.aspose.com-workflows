@@ -29,9 +29,9 @@ jobs:
     - name: Find and replace domain name
       run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
     - name: Build Cells
-      run: hugo --config "./config-i18n-cells.toml" -c "content/cells" -b "https://products-qa.aspose.com/cells" --cleanDestinationDir --minify
+      run: hugo --config "configs/staging-cells.toml" -c "content/cells" -b "https://products-qa.aspose.com/cells" --cleanDestinationDir --minify
     - name: Deploy Cells to S3
-      run: hugo deploy --config "./config-i18n-cells.toml" --maxDeletes=-1 --target "cells" --force
+      run: hugo deploy --config "configs/staging-cells.toml" --maxDeletes=-1 --target "cells" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

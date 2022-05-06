@@ -27,9 +27,9 @@ jobs:
     - name: Find and replace url param in frontmatter
       run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Build Total
-      run: hugo --config "./config-prod-i18n-total.toml" -c "content/total" -b "https://products.aspose.com/total" --cleanDestinationDir --minify
+      run: hugo --config "configs/production-total.toml" -c "content/total" -b "https://products.aspose.com/total" --cleanDestinationDir --minify
     - name: Deploy Total to S3
-      run: hugo deploy --config "./config-prod-i18n-total.toml" --maxDeletes=-1 --target "total" --force
+      run: hugo deploy --config "configs/production-total.toml" --maxDeletes=-1 --target "total" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

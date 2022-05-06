@@ -24,12 +24,6 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      uses: jacobtomlinson/gha-find-replace@master
-      with:
-        find: "url:"
-        replace: "url_ignore:"
-        include: "_index.md"
-    - name: Find and replace url param in frontmatter
       run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Find and replace domain name
       run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +

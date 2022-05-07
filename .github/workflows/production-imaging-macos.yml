@@ -1,4 +1,4 @@
-name: Production-Imaging
+name: Production-Imaging-macOS
 
 on:
   workflow_dispatch:

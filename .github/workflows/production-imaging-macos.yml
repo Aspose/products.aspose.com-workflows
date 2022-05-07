@@ -22,8 +22,6 @@ jobs:
       run:  npm install -D --save autoprefixer
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
-    - name: Find and replace domain name
-      run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
     - name: Build Imaging
       run: hugo --config "./config-prod.toml" -c "content/imaging" -b "https://products.aspose.com/imaging" --cleanDestinationDir --minify
     - name: Deploy Imaging to S3

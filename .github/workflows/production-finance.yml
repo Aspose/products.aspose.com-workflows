@@ -37,9 +37,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build Finance
-      run: hugo --config "./config-prod-i18n.toml" -c "content/finance" -b "https://products.aspose.com/finance" --cleanDestinationDir --minify
+      run: hugo --config "configs/finance.toml" -c "content/finance" -b "https://products.aspose.com/finance" --cleanDestinationDir --minify
     - name: Deploy Finance to S3
-      run: hugo deploy --config "./config-prod-i18n.toml" --maxDeletes=-1 --target "finance" --force
+      run: hugo deploy --config "configs/finance.toml" --maxDeletes=-1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

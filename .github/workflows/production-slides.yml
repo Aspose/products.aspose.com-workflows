@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main
@@ -25,17 +25,7 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      uses: jacobtomlinson/gha-find-replace@master
-      with:
-        find: "url:"
-        replace: "url_ignore:"
-        include: "_index.md"
-    - name: Find and replace image url domain
-      uses: jacobtomlinson/gha-find-replace@master
-      with:
-        find: "logoImageSrc=\"https://www.aspose.cloud/"
-        replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
-        include: "_index.md"
+      run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Build Slides
       run: hugo --config "configs/slides.toml" -c "content/slides" -b "https://products.aspose.com/slides" --cleanDestinationDir --minify
     - name: Deploy Slides to S3
@@ -43,3 +33,4 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+

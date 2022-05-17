@@ -9,6 +9,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.REPO_TOKEN }}
     - name: Checkout theme repo
       uses: actions/checkout@main
       with:
@@ -36,7 +42,6 @@ jobs:
         find: "products.aspose.com"
         replace: "products-qa.aspose.com"
         include: "_index.md"
-        github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Find and replace image url domain
       uses: jacobtomlinson/gha-find-replace@master
       with:

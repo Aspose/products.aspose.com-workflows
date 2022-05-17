@@ -26,7 +26,7 @@ jobs:
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
       run: |
-        ls /home/runner/work/Aspose/products.aspose.com/
+        ls $GITHUB_WORKSPACE
         # find . -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/url:/url_ignore:/g'
     - name: Find and replace domain name
       run: find . -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/products.aspose.com/products-qa.aspose.com/g'

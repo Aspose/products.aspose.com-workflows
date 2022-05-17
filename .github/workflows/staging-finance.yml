@@ -25,7 +25,9 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: find . -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/url:/url_ignore:/g'
+      run: |
+        ls /home/runner/work/Aspose/products.aspose.com/
+        # find . -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/url:/url_ignore:/g'
     - name: Find and replace domain name
       run: find . -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/products.aspose.com/products-qa.aspose.com/g'
     - name: Build Finance

@@ -36,12 +36,14 @@ jobs:
         find: "products.aspose.com"
         replace: "products-qa.aspose.com"
         include: "_index.md"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Find and replace image url domain
       uses: jacobtomlinson/gha-find-replace@master
       with:
         find: "logoImageSrc=\"https://www.aspose.cloud/"
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build Finance
       run: hugo --config "configs/finance.toml" -c "content/finance" -b "https://products-qa.aspose.com/finance" --cleanDestinationDir --minify
     - name: Deploy Finance to S3

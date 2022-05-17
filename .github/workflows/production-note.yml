@@ -1,4 +1,4 @@
-name: Production-Note
+name: Note-Production
 
 on:
   repository_dispatch:

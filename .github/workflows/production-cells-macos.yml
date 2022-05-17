@@ -1,4 +1,4 @@
-name: Production-Cells-macOS
+name: Cells-Production
 
 on:
   repository_dispatch:

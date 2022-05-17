@@ -1,4 +1,4 @@
-name: Staging-Finance
+name: Finance-Staging
 
 on:
   repository_dispatch:

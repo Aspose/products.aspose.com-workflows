@@ -1,4 +1,4 @@
-name: Production-OMR
+name: OMR-Production
 
 on:
   repository_dispatch:

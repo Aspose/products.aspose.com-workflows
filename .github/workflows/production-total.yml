@@ -1,4 +1,4 @@
-name: Production-Total-macOS
+name: Total-Production
 
 on:
   repository_dispatch:

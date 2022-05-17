@@ -1,4 +1,4 @@
-name: Staging-Imaging-Custom
+name: Imaging-Custom-Staging
 
 on:
   workflow_dispatch:

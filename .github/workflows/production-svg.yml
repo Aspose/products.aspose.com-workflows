@@ -1,4 +1,4 @@
-name: Production-SVG
+name: SVG-Production
 
 on:
   repository_dispatch:

@@ -1,4 +1,4 @@
-name: Staging-PSD
+name: PSD-Staging
 
 on:
   repository_dispatch:

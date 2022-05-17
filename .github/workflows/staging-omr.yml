@@ -1,4 +1,4 @@
-name: Staging-OMR
+name: OMR-Staging
 
 on:
   repository_dispatch:

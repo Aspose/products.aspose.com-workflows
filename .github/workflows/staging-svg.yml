@@ -1,4 +1,4 @@
-name: Staging-SVG
+name: SVG-Staging
 
 on:
   repository_dispatch:

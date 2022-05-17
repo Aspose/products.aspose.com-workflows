@@ -1,4 +1,4 @@
-name: Production-TeX
+name: TeX-Production
 
 on:
   repository_dispatch:

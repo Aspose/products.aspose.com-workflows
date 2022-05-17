@@ -1,4 +1,4 @@
-name: Production-PDF
+name: PDF-Production
 
 on:
   repository_dispatch:

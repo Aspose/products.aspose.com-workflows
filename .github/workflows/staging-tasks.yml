@@ -1,4 +1,4 @@
-name: Staging-Tasks
+name: Tasks-Staging
 
 on:
   repository_dispatch:

@@ -1,4 +1,4 @@
-name: Staging-ZIP
+name: ZIP-Staging
 
 on:
   repository_dispatch:

@@ -1,4 +1,4 @@
-name: Production-Diagram
+name: Diagram-Production
 
 on:
   repository_dispatch:

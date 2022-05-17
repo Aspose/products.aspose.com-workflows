@@ -1,4 +1,4 @@
-name: Production-CAD
+name: CAD-Production
 
 on:
   repository_dispatch:

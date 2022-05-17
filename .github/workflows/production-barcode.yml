@@ -1,4 +1,4 @@
-name: Production-BarCode
+name: BarCode-Production
 
 on:
   repository_dispatch:

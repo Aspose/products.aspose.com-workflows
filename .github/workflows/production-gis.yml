@@ -1,4 +1,4 @@
-name: Production-GIS
+name: GIS-Production
 
 on:
   repository_dispatch:

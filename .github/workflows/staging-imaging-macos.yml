@@ -1,4 +1,4 @@
-name: Staging-Imaging-macOS
+name: Imaging-Staging
 
 on:
   workflow_dispatch:

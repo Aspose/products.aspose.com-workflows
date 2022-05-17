@@ -1,4 +1,4 @@
-name: Production-3D
+name: 3D-Production
 
 on:
   repository_dispatch:

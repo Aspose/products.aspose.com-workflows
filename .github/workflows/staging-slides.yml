@@ -1,4 +1,4 @@
-name: Staging-Slides
+name: Slides-Staging
 
 on:
   repository_dispatch:

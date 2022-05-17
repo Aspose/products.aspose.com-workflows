@@ -1,4 +1,4 @@
-name: Staging-TeX
+name: TeX-Staging
 
 on:
   repository_dispatch:

@@ -1,4 +1,4 @@
-name: Staging-BarCode
+name: BarCode-Staging
 
 on:
   repository_dispatch:

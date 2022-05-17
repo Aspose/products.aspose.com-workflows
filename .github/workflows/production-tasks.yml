@@ -1,4 +1,4 @@
-name: Production-Tasks
+name: Tasks-Production
 
 on:
   repository_dispatch:

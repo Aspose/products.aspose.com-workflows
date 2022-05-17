@@ -1,4 +1,4 @@
-name: Production-Words
+name: Words-Production
 
 on:
   repository_dispatch:

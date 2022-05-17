@@ -1,4 +1,4 @@
-name: Staging-Words
+name: Words-Staging
 
 on:
   repository_dispatch:

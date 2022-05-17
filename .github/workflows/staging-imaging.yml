@@ -1,4 +1,4 @@
-name: Staging-Imaging
+name: Imaging-Staging
 
 on:
   repository_dispatch:

@@ -1,4 +1,4 @@
-name: Staging-Note
+name: Note-Staging
 
 on:
   repository_dispatch:

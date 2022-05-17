@@ -1,4 +1,4 @@
-name: Staging-CAD
+name: CAD-Staging
 
 on:
   repository_dispatch:

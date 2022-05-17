@@ -1,4 +1,4 @@
-name: Staging-Page
+name: Page-Staging
 
 on:
   repository_dispatch:

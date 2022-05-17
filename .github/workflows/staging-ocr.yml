@@ -1,4 +1,4 @@
-name: Staging-OCR
+name: OCR-Staging
 
 on:
   repository_dispatch:

@@ -1,4 +1,4 @@
-name: Staging-PUB
+name: PUB-Staging
 
 on:
   repository_dispatch:

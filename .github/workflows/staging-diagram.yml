@@ -1,4 +1,4 @@
-name: Staging-Diagram
+name: Diagram-Staging
 
 on:
   repository_dispatch:

@@ -1,4 +1,4 @@
-name: Production-HTML
+name: HTML-Production
 
 on:
   repository_dispatch:

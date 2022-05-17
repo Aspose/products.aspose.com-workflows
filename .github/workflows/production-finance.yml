@@ -1,4 +1,4 @@
-name: Production-Finance
+name: Finance-Production
 
 on:
   repository_dispatch:

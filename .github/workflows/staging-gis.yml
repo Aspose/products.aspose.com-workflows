@@ -1,4 +1,4 @@
-name: Staging-GIS
+name: GIS-Staging
 
 on:
   repository_dispatch:

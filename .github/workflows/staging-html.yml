@@ -1,4 +1,4 @@
-name: Staging-HTML
+name: HTML-Staging
 
 on:
   repository_dispatch:

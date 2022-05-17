@@ -1,4 +1,4 @@
-name: Staging-Email
+name: Email-Staging
 
 on:
   repository_dispatch:

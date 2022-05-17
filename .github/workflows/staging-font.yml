@@ -1,4 +1,4 @@
-name: Staging-Font
+name: Font-Staging
 
 on:
   repository_dispatch:

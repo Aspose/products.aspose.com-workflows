@@ -1,4 +1,4 @@
-name: Staging-3D
+name: 3D-Staging
 
 on:
   repository_dispatch:

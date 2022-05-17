@@ -1,4 +1,4 @@
-name: Production-Page
+name: Page-Production
 
 on:
   repository_dispatch:

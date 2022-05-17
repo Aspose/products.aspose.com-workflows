@@ -1,4 +1,4 @@
-name: Staging-PDF
+name: PDF-Staging
 
 on:
   repository_dispatch:

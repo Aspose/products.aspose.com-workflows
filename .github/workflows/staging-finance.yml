@@ -25,11 +25,9 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: |
-        ls $GITHUB_WORKSPACE
-        # find . -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/url:/url_ignore:/g'
+      run: find $GITHUB_WORKSPACE -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/url:/url_ignore:/g'
     - name: Find and replace domain name
-      run: find . -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/products.aspose.com/products-qa.aspose.com/g'
+      run: find $GITHUB_WORKSPACE -type f -name "*.md" -print0 | xargs -0 sed -i '' -e 's/products.aspose.com/products-qa.aspose.com/g'
     - name: Build Finance
       run: hugo --config "configs/finance.toml" -c "content/finance" -b "https://products-qa.aspose.com/finance" --cleanDestinationDir --minify
     - name: Deploy Finance to S3

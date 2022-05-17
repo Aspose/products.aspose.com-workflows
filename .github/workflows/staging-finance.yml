@@ -25,9 +25,9 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
+      run: sed -i 's/url:/url_ignore:/g' _index.md
     - name: Find and replace domain name
-      run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
+      run: sed -i 's/products.aspose.com/products-qa.aspose.com/g' _index.md
     - name: Build Finance
       run: hugo --config "configs/finance.toml" -c "content/finance" -b "https://products-qa.aspose.com/finance" --cleanDestinationDir --minify
     - name: Deploy Finance to S3

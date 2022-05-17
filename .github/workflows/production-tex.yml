@@ -25,13 +25,13 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      uses: jacobtomlinson/gha-find-replace@master
+      uses: jacobtomlinson/gha-find-replace@v2
       with:
         find: "url:"
         replace: "url_ignore:"
         include: "_index.md"
     - name: Find and replace image url domain
-      uses: jacobtomlinson/gha-find-replace@master
+      uses: jacobtomlinson/gha-find-replace@v2
       with:
         find: "logoImageSrc=\"https://www.aspose.cloud/"
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"

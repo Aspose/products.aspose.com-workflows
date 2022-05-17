@@ -25,9 +25,23 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: grep -rli --include \*.md 'url:' * | xargs -i@ sed -i 's/url:/url_ignore:/g' @
+      uses: jacobtomlinson/gha-find-replace@v2
+      with:
+        find: "url:"
+        replace: "url_ignore:"
+        include: "_index.md"
     - name: Find and replace domain name
-      run: grep -rli --include \*.md 'products.aspose.com' * | xargs -i@ sed -i 's/products.aspose.com/products-qa.aspose.com/g' @
+      uses: jacobtomlinson/gha-find-replace@v2
+      with:
+        find: "products.aspose.com"
+        replace: "products-qa.aspose.com"
+        include: "_index.md"
+    - name: Find and replace image url domain
+      uses: jacobtomlinson/gha-find-replace@v2
+      with:
+        find: "logoImageSrc=\"https://www.aspose.cloud/"
+        replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
+        include: "_index.md"
     - name: Build Finance
       run: hugo --config "configs/finance.toml" -c "content/finance" -b "https://products-qa.aspose.com/finance" --cleanDestinationDir --minify
     - name: Deploy Finance to S3

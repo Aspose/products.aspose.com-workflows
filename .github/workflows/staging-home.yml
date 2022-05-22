@@ -42,8 +42,10 @@ jobs:
         find: "logoImageSrc=\"https://www.aspose.cloud/"
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
+        
     - name: Build Home
       run: hugo --config "configs/home.toml" -b "https://products-qa.aspose.com" --cleanDestinationDir --minify
+
     - name: Upload default language
       uses: jakejarvis/s3-sync-action@master
       with:
@@ -65,5 +67,3 @@ jobs:
         file_path: 'public/en/sitemap.xml'
         file_mime_type: 'application/xml'
         dest_dir: 'en'
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

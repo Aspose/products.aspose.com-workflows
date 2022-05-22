@@ -46,14 +46,8 @@ jobs:
     - name: Build Home
       run: hugo --config "configs/home.toml" -b "https://products-qa.aspose.com" --cleanDestinationDir --minify
 
-    - name: Upload Public files
-      uses: jakejarvis/s3-sync-action@master
-      with:
-        args: --acl public-read --follow-symlinks
+    - name: Deploy Home to S3
+      run: hugo deploy --config "configs/home.toml" --maxDeletes=0 --target "staging" --force
       env:
-        AWS_S3_BUCKET: 'products-qa.aspose.com'
-        AWS_ACCESS_KEY_ID:  ${{ secrets.ACCESS_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
-        AWS_REGION: 'us-west-2'
-        SOURCE_DIR: 'public'
-        DEST_DIR: '/' 

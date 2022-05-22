@@ -68,17 +68,17 @@ jobs:
         file_mime_type: 'application/xml'
         dest_dir: 'en'
 
-    - name: Upload default language
+    - name: Upload default (en) language
       uses: jakejarvis/s3-sync-action@master
       with:
-        args: --acl public-read --follow-symlinks --delete
+        args: --acl public-read --follow-symlinks
       env:
         AWS_S3_BUCKET: 'products-qa.aspose.com'
         AWS_ACCESS_KEY_ID:  ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
         AWS_REGION: 'us-west-2'
         SOURCE_DIR: 'public/en'
-        DEST_DIR: '' 
+        DEST_DIR: '/' 
         
     - name: Upload en sitemap
       uses: swimlane/s3-upload-file-action@main
@@ -90,7 +90,7 @@ jobs:
         file_mime_type: 'application/xml'
         dest_dir: 'en'
 
-    - name: Upload default language
+    - name: Upload de language
       uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete
@@ -102,7 +102,7 @@ jobs:
         SOURCE_DIR: 'public/de'
         DEST_DIR: 'de' 
         
-    - name: Upload en sitemap
+    - name: Upload de sitemap
       uses: swimlane/s3-upload-file-action@main
       with:
         aws_access_key_id: ${{ secrets.ACCESS_KEY }}
@@ -112,7 +112,7 @@ jobs:
         file_mime_type: 'application/xml'
         dest_dir: 'de'
 
-    - name: Upload default language
+    - name: Upload es language
       uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete
@@ -124,7 +124,7 @@ jobs:
         SOURCE_DIR: 'public/es'
         DEST_DIR: 'es' 
         
-    - name: Upload en sitemap
+    - name: Upload es sitemap
       uses: swimlane/s3-upload-file-action@main
       with:
         aws_access_key_id: ${{ secrets.ACCESS_KEY }}
@@ -134,7 +134,7 @@ jobs:
         file_mime_type: 'application/xml'
         dest_dir: 'es'
 
-    - name: Upload default language
+    - name: Upload fr language
       uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete
@@ -146,7 +146,7 @@ jobs:
         SOURCE_DIR: 'public/fr'
         DEST_DIR: 'fr' 
         
-    - name: Upload en sitemap
+    - name: Upload fr sitemap
       uses: swimlane/s3-upload-file-action@main
       with:
         aws_access_key_id: ${{ secrets.ACCESS_KEY }}
@@ -156,7 +156,7 @@ jobs:
         file_mime_type: 'application/xml'
         dest_dir: 'fr'
       
-    - name: Upload default language
+    - name: Upload it language
       uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete
@@ -168,7 +168,7 @@ jobs:
         SOURCE_DIR: 'public/en'
         DEST_DIR: 'it' 
         
-    - name: Upload en sitemap
+    - name: Upload it sitemap
       uses: swimlane/s3-upload-file-action@main
       with:
         aws_access_key_id: ${{ secrets.ACCESS_KEY }}

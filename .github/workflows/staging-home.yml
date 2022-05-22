@@ -55,7 +55,7 @@ jobs:
         AWS_ACCESS_KEY_ID:  ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
         AWS_REGION: 'us-west-2'
-        SOURCE_DIR: 'public/en'
+        SOURCE_DIR: 'public'
         DEST_DIR: '/' 
         
     - name: Upload en sitemap

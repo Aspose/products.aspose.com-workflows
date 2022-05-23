@@ -1,6 +1,8 @@
-name: Imaging-Staging
+name: Imaging-Production
 
 on:
+  repository_dispatch:
+    types: [production-complete]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +14,6 @@ jobs:
       with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          ref: alexander.feigin.IMAGINGNET-5456_with_content
           fetch-depth: 0 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
@@ -22,13 +23,11 @@ jobs:
     - name: Install autoprefixer
       run:  npm install -D --save autoprefixer
     - name: Install postcss-cli
-      run:  npm install -D --save postcss-cli    
-    - name: Find and replace domain name
-      run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
+      run:  npm install -D --save postcss-cli
     - name: Build Imaging
-      run: hugo --config "./configs/imaging.toml" -c "content/imaging" -b "https://products-qa.aspose.com/imaging" --cleanDestinationDir --minify
+      run: hugo --config "./config-prod-imaging.toml" -c "content/imaging" -b "https://products.aspose.com/imaging" --cleanDestinationDir --minify
     - name: Deploy Imaging to S3
-      run: hugo deploy --config "./configs/imaging.toml" --maxDeletes=-1 --target "staging" --force
+      run: hugo deploy --config "./config-prod-imaging.toml" --maxDeletes=-1 --target "imaging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

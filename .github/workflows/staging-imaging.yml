@@ -7,13 +7,14 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main
       with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
+          ref: alexander.feigin.IMAGINGNET-5456_with_content
           fetch-depth: 0 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
@@ -23,29 +24,13 @@ jobs:
     - name: Install autoprefixer
       run:  npm install -D --save autoprefixer
     - name: Install postcss-cli
-      run:  npm install -D --save postcss-cli
-    - name: Find and replace url param in frontmatter
-      uses: jacobtomlinson/gha-find-replace@v2
-      with:
-        find: "url:"
-        replace: "url_ignore:"
-        include: "_index.md"
+      run:  npm install -D --save postcss-cli    
     - name: Find and replace domain name
-      uses: jacobtomlinson/gha-find-replace@v2
-      with:
-        find: "products.aspose.com"
-        replace: "products-qa.aspose.com"
-        include: "_index.md"
-    - name: Find and replace image url domain
-      uses: jacobtomlinson/gha-find-replace@v2
-      with:
-        find: "logoImageSrc=\"https://www.aspose.cloud/"
-        replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
-        include: "_index.md"
+      run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
     - name: Build Imaging
-      run: hugo --config "./config.toml" -c "content/imaging" -b "https://products-qa.aspose.com/imaging" --cleanDestinationDir --minify
+      run: hugo --config "./configs/imaging.toml" -c "content/imaging" -b "https://products-qa.aspose.com/imaging" --cleanDestinationDir --minify
     - name: Deploy Imaging to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "imaging" --force
+      run: hugo deploy --config "./configs/imaging.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

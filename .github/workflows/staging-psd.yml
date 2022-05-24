@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build PSD
-      run: hugo --config "configs/psd.toml" -c "content/psd" -b "https://products-qa.aspose.com/psd" --cleanDestinationDir --minify
+      run: hugo --config "configs/psd.toml" -b "https://products-qa.aspose.com/psd" --cleanDestinationDir --minify
     - name: Deploy PSD to S3
-      run: hugo deploy --config "configs/psd.toml" --maxDeletes=-1 --target "psd" --force
+      run: hugo deploy --config "configs/psd.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

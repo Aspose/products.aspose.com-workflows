@@ -27,7 +27,7 @@ jobs:
     - name: Build Imaging
       run: hugo --config "./configs/imaging.toml" -c "content/imaging" -b "https://products.aspose.com/imaging" --cleanDestinationDir --minify
     - name: Deploy Imaging to S3
-      run: hugo deploy --config "./configs/imaging.toml" --maxDeletes=-1 --target "imaging" --force
+      run: hugo deploy --config "./configs/imaging.toml" --maxDeletes=-1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

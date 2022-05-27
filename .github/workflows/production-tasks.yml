@@ -37,9 +37,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build Tasks
-      run: hugo --config "./config-prod.toml" -c "content/tasks" -b "https://products.aspose.com/tasks" --cleanDestinationDir --minify
+      run: hugo --config "configs/tasks.toml" -b "https://products.aspose.com/tasks" --cleanDestinationDir --minify
     - name: Deploy Tasks to S3
-      run: hugo deploy --config "./config-prod.toml" --maxDeletes=-1 --target "tasks" --force
+      run: hugo deploy --config "configs/tasks.toml" --maxDeletes=-1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

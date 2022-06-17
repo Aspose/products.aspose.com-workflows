@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build OCR
-      run: hugo --config "./config.toml" -c "content/ocr" -b "https://products-qa.aspose.com/ocr" --cleanDestinationDir --minify
+      run: hugo --config "configs/ocr.toml" -c "content/ocr" -b "https://products-qa.aspose.com/ocr" --cleanDestinationDir --minify
     - name: Deploy OCR to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "ocr" --force
+      run: hugo deploy --config "configs/ocr.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

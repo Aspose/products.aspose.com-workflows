@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build OMR
-      run: hugo --config "./config.toml" -c "content/omr" -b "https://products-qa.aspose.com/omr" --cleanDestinationDir --minify
+      run: hugo --config "configs/omr.toml" -c "content/omr" -b "https://products-qa.aspose.com/omr" --cleanDestinationDir --minify
     - name: Deploy OMR to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "omr" --force
+      run: hugo deploy --config "configs/omr.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

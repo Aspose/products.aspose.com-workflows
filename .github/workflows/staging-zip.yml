@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build ZIP
-      run: hugo --config "./config.toml" -c "content/zip" -b "https://products-qa.aspose.com/zip" --cleanDestinationDir --minify
+      run: hugo --config "configs/zip.toml" -c "content/zip" -b "https://products-qa.aspose.com/zip" --cleanDestinationDir --minify
     - name: Deploy ZIP to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "zip" --force
+      run: hugo deploy --config "configs/zip.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

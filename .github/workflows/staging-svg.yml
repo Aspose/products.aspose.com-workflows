@@ -45,7 +45,7 @@ jobs:
     - name: Build SVG
       run: hugo --config "./configs/svg.toml" -c "content/svg" -b "https://products-qa.aspose.com/svg" --cleanDestinationDir --minify
     - name: Deploy SVG to S3
-      run: hugo deploy --config "./configs/svg.toml" --maxDeletes=-1 --target "svg" --force
+      run: hugo deploy --config "./configs/svg.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

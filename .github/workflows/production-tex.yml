@@ -37,9 +37,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build TeX
-      run: hugo --config "./config-prod.toml" -c "content/tex" -b "https://products.aspose.com/tex" --cleanDestinationDir --minify
+      run: hugo --config "configs/tex.toml" -c "content/tex" -b "https://products.aspose.com/tex" --cleanDestinationDir --minify
     - name: Deploy TeX to S3
-      run: hugo deploy --config "./config-prod.toml" --maxDeletes=-1 --target "tex" --force
+      run: hugo deploy --config "configs/tex.toml" --maxDeletes=-1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

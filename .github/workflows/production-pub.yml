@@ -37,9 +37,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build PUB
-      run: hugo --config "./config-prod.toml" -c "content/pub" -b "https://products.aspose.com/pub" --cleanDestinationDir --minify
+      run: hugo --config "configs/pub.toml" -c "content/pub" -b "https://products.aspose.com/pub" --cleanDestinationDir --minify
     - name: Deploy PUB to S3
-      run: hugo deploy --config "./config-prod.toml" --maxDeletes=-1 --target "pub" --force
+      run: hugo deploy --config "configs/pub.toml" --maxDeletes=-1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

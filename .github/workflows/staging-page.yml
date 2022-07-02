@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build Page
-      run: hugo --config "./config.toml" -c "content/page" -b "https://products-qa.aspose.com/page" --cleanDestinationDir --minify
+      run: hugo --config "configs/page.toml" -c "content/page" -b "https://products-qa.aspose.com/page" --cleanDestinationDir --minify
     - name: Deploy Page to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "page" --force
+      run: hugo deploy --config "configs/page.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

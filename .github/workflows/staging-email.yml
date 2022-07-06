@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build Email
-      run: hugo --config "./config.toml" -c "content/email" -b "https://products-qa.aspose.com/email" --cleanDestinationDir --minify
+      run: hugo --config "configs/email.toml" -c "content/email" -b "https://products-qa.aspose.com/email" --cleanDestinationDir --minify
     - name: Deploy Email to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "email" --force
+      run: hugo deploy --config "configs/email.toml" --maxDeletes=-1 --target "staging" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

@@ -37,7 +37,7 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build HTML
-      run: hugo --config "./config-prod.toml" -c "content/html" -b "https://products.aspose.com/html" --cleanDestinationDir --minify
+      run: hugo --config "./configs/html.toml" -c "content/html" -b "https://products.aspose.com/html" --cleanDestinationDir --minify
     - name: Deploy HTML to S3
       run: hugo deploy --config "./config-prod.toml" --maxDeletes=-1 --target "html" --force
       env:

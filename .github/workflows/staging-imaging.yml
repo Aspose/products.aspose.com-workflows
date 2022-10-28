@@ -15,11 +15,11 @@ jobs:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
           fetch-depth: 0
-          ref: samer.el-khatib.IMAGINGNET-5456_with_content
+          ref: samer.el-khatib.IMAGINGNET-5663_with_content
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
-          hugo-version: 'latest'
+          hugo-version: '0.101.0'
           extended: true
     - name: Install autoprefixer
       run:  npm install -D --save autoprefixer

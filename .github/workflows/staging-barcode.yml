@@ -15,7 +15,6 @@ jobs:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
           fetch-depth: 0 
-          ref: barcode-landings-improvements
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:

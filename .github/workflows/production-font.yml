@@ -38,8 +38,8 @@ jobs:
         include: "_index.md"
     - name: Build Font
       run: hugo --config "configs/font.toml" -c "content/font" -b "https://products.aspose.com/font" --cleanDestinationDir --minify
-    - name: Deploy Font to S3
-      run: hugo deploy --config "configs/font.toml" --maxDeletes=-1 --target "production" --force
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    # - name: Deploy Font to S3
+    #   run: hugo deploy --config "configs/font.toml" --maxDeletes=-1 --target "production" --force
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

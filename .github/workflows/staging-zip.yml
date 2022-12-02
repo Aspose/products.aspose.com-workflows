@@ -44,8 +44,8 @@ jobs:
         include: "_index.md"
     - name: Build ZIP
       run: hugo --config "configs/zip.toml" -c "content/zip" -b "https://products-qa.aspose.com/zip" --cleanDestinationDir --minify
-    - name: Deploy ZIP to S3
-      run: hugo deploy --config "configs/zip.toml" --maxDeletes=-1 --target "staging" --force
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    # - name: Deploy ZIP to S3
+    #   run: hugo deploy --config "configs/zip.toml" --maxDeletes=-1 --target "staging" --force
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

@@ -44,8 +44,8 @@ jobs:
         include: "_index.md"
     - name: Build Tasks
       run: hugo --config "configs/tasks.toml" -b "https://products-qa.aspose.com/tasks" --cleanDestinationDir --minify
-    - name: Deploy Tasks to S3
-      run: hugo deploy --config "configs/tasks.toml" --maxDeletes=-1 --target "staging" --force
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    # - name: Deploy Tasks to S3
+    #   run: hugo deploy --config "configs/tasks.toml" --maxDeletes=-1 --target "staging" --force
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

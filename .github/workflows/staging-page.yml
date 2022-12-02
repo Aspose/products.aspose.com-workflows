@@ -44,8 +44,8 @@ jobs:
         include: "_index.md"
     - name: Build Page
       run: hugo --config "configs/page.toml" -c "content/page" -b "https://products-qa.aspose.com/page" --cleanDestinationDir --minify
-    - name: Deploy Page to S3
-      run: hugo deploy --config "configs/page.toml" --maxDeletes=-1 --target "staging" --force
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    # - name: Deploy Page to S3
+    #   run: hugo deploy --config "configs/page.toml" --maxDeletes=-1 --target "staging" --force
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

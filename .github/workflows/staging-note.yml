@@ -44,8 +44,8 @@ jobs:
         include: "_index.md"
     - name: Build Note
       run: hugo --config "configs/note.toml" -b "https://products-qa.aspose.com/note" --cleanDestinationDir --minify
-    - name: Deploy Note to S3
-      run: hugo deploy --config "configs/note.toml" --maxDeletes=-1 --target "staging" --force
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    # - name: Deploy Note to S3
+    #   run: hugo deploy --config "configs/note.toml" --maxDeletes=-1 --target "staging" --force
+    #   env:
+    #     AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

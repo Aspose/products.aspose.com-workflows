@@ -24,8 +24,6 @@ jobs:
       run:  npm install -D --save autoprefixer
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
-    - name: Find and replace url param in frontmatter
-      run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Build Total
       run: hugo --config "configs/total.toml" -c "content/total" -b "https://products.aspose.com/total" --cleanDestinationDir --minify
     - name: Deploy Total to S3

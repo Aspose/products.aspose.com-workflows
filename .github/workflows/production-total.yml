@@ -27,7 +27,7 @@ jobs:
     - name: Build Total
       run: hugo --config "configs/total.toml" -c "content/total" -b "https://products.aspose.com/total" --cleanDestinationDir --minify
     - name: Deploy Total to S3
-      run: hugo deploy --config "configs/total.toml" --maxDeletes=-1 --target "production" --force
+      run: hugo deploy --config "configs/total.toml" --maxDeletes -1 --target "production" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

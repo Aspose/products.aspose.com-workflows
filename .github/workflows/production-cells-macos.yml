@@ -25,7 +25,7 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
+      run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Build Cells
       run: hugo --config "configs/cells.toml" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
     - name: Deploy Cells to S3

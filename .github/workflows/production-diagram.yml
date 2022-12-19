@@ -25,7 +25,7 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
+      run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Build Diagram
       run: hugo --config "configs/diagram.toml" -c "content/diagram" -b "https://products.aspose.com/diagram" --cleanDestinationDir --minify
     - name: Deploy Diagram to S3

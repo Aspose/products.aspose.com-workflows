@@ -1,12 +1,12 @@
----
 name: total-split
-workflow_dispatch:
-  inputs:
-    environment:
-      description: Build environment
-      type: environment
-      default: staging
-      required: true
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Build environment
+        type: environment
+        default: staging
+        required: true
 jobs:
   deploy:
     runs-on: macos-latest

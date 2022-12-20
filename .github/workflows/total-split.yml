@@ -1,13 +1,12 @@
+---
 name: total-split
-
 workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Build environment'
-        type: environment
-        default: staging
-        required: true
-
+  inputs:
+    environment:
+      description: Build environment
+      type: environment
+      default: staging
+      required: true
 jobs:
   deploy:
     runs-on: macos-latest
@@ -18,7 +17,6 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-
     continue-on-error: true
     strategy:
       fail-fast: false
@@ -34,39 +32,41 @@ jobs:
           - python-net
           - reporting-services
           - sharepoint
-
     steps:
-    - name: Checkout theme repo
-      uses: actions/checkout@main
-      with:
+      - name: Checkout theme repo
+        uses: actions/checkout@main
+        with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
           node-version: 18
-    - name: Setup Hugo
-      uses: peaceiris/actions-hugo@v2.4.13
-      with:
-          hugo-version: '0.101.0'
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2.4.13
+        with:
+          hugo-version: 0.101.0
           extended: true
-    - name: Install Node.js Dependencies
-      run: npm install
-    - name: Install autoprefixer
-      run:  npm install -D --save autoprefixer
-    - name: Install postcss-cli
-      run:  npm install -D --save postcss-cli
-    - name: Find and replace domain name
-      run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
-    - name: Configure build environment
-      env:
+      - name: Install Node.js Dependencies
+        run: npm install
+      - name: Install autoprefixer
+        run: npm install -D --save autoprefixer
+      - name: Install postcss-cli
+        run: npm install -D --save postcss-cli
+      - name: Find and replace domain name
+        run: LC_ALL=C find . -type f -name '*.md' -exec sed -i ''
+          s/products.aspose.com/products-qa.aspose.com/g {} +
+      - name: Configure build environment
+        env:
           CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
-      run: npm run configure
-    - name: Build Total
-      run: hugo --config "configs/total.toml" "config.json" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify --templateMetrics --templateMetricsHints
-    - name: Deploy Total to S3
-      run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "staging"
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+        run: npm run configure
+      - name: Build Total
+        run: hugo --config "configs/total.toml" "config.json" -c "content/total" -b
+          "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
+          --templateMetrics --templateMetricsHints
+      - name: Deploy Total to S3
+        run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "staging"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

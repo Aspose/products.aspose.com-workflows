@@ -49,6 +49,8 @@ jobs:
         env:
           CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
         run: npm run configure
+      - name: Display config.json
+        run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
       - name: Build Total
         run: hugo --config "configs/total.toml","config.json" -c "content/total" -b
           "https://products-qa.aspose.com/total" --cleanDestinationDir --minify

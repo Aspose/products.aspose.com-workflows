@@ -23,6 +23,15 @@ jobs:
       matrix:
         configure_one_product:
           - android-java
+          - cpp
+          - family
+          - jasperreports
+          - java
+          - net
+          - python-java
+          - python-net
+          - reporting-services
+          - sharepoint
     steps:
       - name: Checkout theme repo
         uses: actions/checkout@main

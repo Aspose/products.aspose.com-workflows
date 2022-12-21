@@ -45,15 +45,12 @@ jobs:
         run: npm install -D --save autoprefixer
       - name: Install postcss-cli
         run: npm install -D --save postcss-cli
-      - name: Find and replace domain name
-        run: LC_ALL=C find . -type f -name '*.md' -exec sed -i ''
-          s/products.aspose.com/products-qa.aspose.com/g {} +
       - name: Configure build environment
         env:
           CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
         run: npm run configure
       - name: Build Total
-        run: hugo --config "configs/total.toml" "config.json" -c "content/total" -b
+        run: hugo --config "configs/total.toml","config.json" -c "content/total" -b
           "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
           --templateMetrics --templateMetricsHints
       - name: Deploy Total to S3

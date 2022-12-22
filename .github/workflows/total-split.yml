@@ -60,9 +60,9 @@ jobs:
           --templateMetrics --templateMetricsHints
       - name: Prepare public folder
         run: |
-          for file in sitemap.xml
+          for f in $(find . 'sitemap.xml');
           do
-            mv "$file" "${{ matrix.configure_one_product }}.xml"
+            mv "$f" "${{ matrix.configure_one_product }}.xml"
           done  
         
       - name: Deploy Total to S3

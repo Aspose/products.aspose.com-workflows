@@ -37,7 +37,7 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build Home
-      run: hugo --config "configs/home.toml" -c "content" -b "https://products.aspose.com/" --cleanDestinationDir --minify
+      run: hugo --config "configs/home.toml" -c "content" -b "https://products.aspose.com/" --cleanDestinationDir --minify --disableKinds 404
     - name: Deploy Home to S3
       run: hugo deploy --config "configs/home.toml" --maxDeletes=0 --target "production" --force
       env:

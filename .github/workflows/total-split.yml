@@ -9,7 +9,7 @@ on:
         required: true
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     environment: ${{ github.event.inputs.environment }}
     env:
       NODE_ENV: ${{ github.event.inputs.environment }}
@@ -23,7 +23,8 @@ jobs:
       matrix:
         configure_one_product:
           - android-java
-          - cpp
+          - python-net
+          - python-java
 
     steps:
       - name: Checkout theme repo
@@ -52,7 +53,7 @@ jobs:
           CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
         run: npm run configure
       - name: Display config.json
-        run: cat /home/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
+        run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
       - name: Build Total
         run: hugo --config "configs/total.toml","config.json" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
           --templateMetrics --templateMetricsHints

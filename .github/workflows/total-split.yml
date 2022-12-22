@@ -9,7 +9,7 @@ on:
         required: true
 jobs:
   deploy:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
       NODE_ENV: ${{ github.event.inputs.environment }}
@@ -24,14 +24,7 @@ jobs:
         configure_one_product:
           - android-java
           - cpp
-          - family
-          - jasperreports
-          - java
-          - net
-          - python-java
-          - python-net
-          - reporting-services
-          - sharepoint
+
     steps:
       - name: Checkout theme repo
         uses: actions/checkout@main
@@ -61,9 +54,12 @@ jobs:
       - name: Display config.json
         run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
       - name: Build Total
-        run: hugo --config "configs/total.toml","config.json" -c "content/total" -b
-          "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
+        run: hugo --config "configs/total.toml","config.json" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
           --templateMetrics --templateMetricsHints
+      - name: Prepare public folder
+        run: |
+          mv public/sitemap.xml public/${{ matrix.configure_one_product }}.xml;
+        
       - name: Deploy Total to S3
         run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "staging"
         env:

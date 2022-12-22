@@ -22,9 +22,10 @@ jobs:
       fail-fast: false
       matrix:
         configure_one_product:
-          - android-java
+          - sharepoint
           - python-net
           - python-java
+          - family
 
     steps:
       - name: Checkout theme repo
@@ -59,7 +60,10 @@ jobs:
           --templateMetrics --templateMetricsHints
       - name: Prepare public folder
         run: |
-          mv public/sitemap.xml public/${{ matrix.configure_one_product }}.xml;
+          for file in sitemap.xml
+          do
+            mv "$file" "${{ matrix.configure_one_product }}.xml"
+          done  
         
       - name: Deploy Total to S3
         run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "staging"

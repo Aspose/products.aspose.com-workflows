@@ -26,6 +26,10 @@ jobs:
           - python-net
           - python-java
           - family
+          - jasperreports
+          - java
+          - net
+          - cpp
 
     steps:
       - name: Checkout theme repo
@@ -59,8 +63,9 @@ jobs:
         run: hugo --config "configs/total.toml","config.json" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
           --templateMetrics --templateMetricsHints
       - name: Prepare public folder
-        run: find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;=
-        
+        run: |
+            find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;=
+            mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.qa.sitemap public/sitemap.xml;
       - name: Deploy Total to S3
         run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "staging"
         env:

@@ -60,7 +60,7 @@ jobs:
           --templateMetrics --templateMetricsHints
       - name: Prepare public folder
         run: |
-          for f in $(find . 'sitemap.xml');
+          for f in /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public/**/sitemap.xml;
           do
             mv "$f" "${{ matrix.configure_one_product }}.xml"
           done  

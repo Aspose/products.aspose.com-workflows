@@ -1,8 +1,6 @@
 name: Total-Staging
 
 on:
-  repository_dispatch:
-    types: [staging-complete]
   workflow_dispatch:
 
 jobs:

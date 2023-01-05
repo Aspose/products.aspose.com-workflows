@@ -1,19 +1,13 @@
-name: total-split
+name: Total-Staging-Split
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Build environment
-        type: environment
-        default: staging
-        required: true
+  repository_dispatch:
+    types: [staging-complete]
+  
 jobs:
   deploy:
     runs-on: macos-latest
-    environment: ${{ github.event.inputs.environment }}
     env:
-      NODE_ENV: ${{ github.event.inputs.environment }}
-      HUGO_ENVIRONMENT: ${{ github.event.inputs.environment }}
       AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}

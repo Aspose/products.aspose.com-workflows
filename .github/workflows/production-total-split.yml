@@ -1,0 +1,69 @@
+name: Total-Production-Split
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [production-complete]
+  
+jobs:
+  deploy:
+    runs-on: macos-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        configure_one_product:
+          - sharepoint
+          - python-net
+          - python-java
+          - family
+          - jasperreports
+          - java
+          - net
+          - cpp
+          - android-java
+          - reporting-services
+
+    steps:
+      - name: Checkout theme repo
+        uses: actions/checkout@main
+        with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2.4.13
+        with:
+          hugo-version: 0.101.0
+          extended: true
+      - name: Install Node.js Dependencies
+        run: npm install
+      - name: Install autoprefixer
+        run: npm install -D --save autoprefixer
+      - name: Install postcss-cli
+        run: npm install -D --save postcss-cli
+      - name: Configure build environment
+        env:
+          CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
+        run: npm run configure
+      - name: Display config.json
+        run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
+      - name: Build Total
+        run: hugo --config "configs/total.toml","config.json" -c "content/total" -b "https://products.aspose.com/total" --cleanDestinationDir --minify
+          --templateMetrics --templateMetricsHints
+      - name: Prepare public folder
+        run: |
+            find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;=
+            mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.sitemap public/sitemap.xml;
+      - name: Deploy Total to S3
+        run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "production"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

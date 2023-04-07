@@ -2,7 +2,7 @@ name: Total-Staging-Split
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: [staging-complete]
+    types: [staging-complete, Total-Staging-Split]
   
 jobs:
   deploy:

@@ -57,7 +57,7 @@ jobs:
         run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
       - name: Build Total
         run: hugo --config "configs/total.toml","config.json" -c "content/total" -b "https://products-qa.aspose.com/total" --cleanDestinationDir --minify
-          --templateMetrics --templateMetricsHints
+          --templateMetrics --templateMetricsHints --enableGitInfo
       - name: Prepare public folder
         run: |
             find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;=

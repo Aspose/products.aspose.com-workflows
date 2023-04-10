@@ -62,6 +62,7 @@ jobs:
         run: |
             find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;=
             mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.sitemap public/sitemap.xml;
+            mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.rss public/index.xml;
       - name: Deploy Total to S3
         run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "production"
         env:

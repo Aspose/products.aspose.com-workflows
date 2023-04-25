@@ -1,6 +1,9 @@
 name: CAD-Production
 
 on:
+  push:
+    branches:
+      - master
   repository_dispatch:
     types: [production-complete]
   workflow_dispatch:

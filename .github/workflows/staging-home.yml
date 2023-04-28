@@ -47,7 +47,7 @@ jobs:
       run: hugo --config "configs/home.toml" -b "https://products-qa.aspose.com" --cleanDestinationDir --minify
 
     - name: Prepare public folder
-      run: mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/home-ru.sitemap public/sitemap_ru.xml;
+      run: mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/home-ru.sitemap public/ru-sitemaps.xml;
 
     - name: Deploy Home to S3
       run: hugo deploy --config "configs/home.toml" --maxDeletes=0 --target "staging" --force

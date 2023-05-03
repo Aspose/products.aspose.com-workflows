@@ -26,6 +26,7 @@ jobs:
           - cpp
           - android-java
           - reporting-services
+          - nodejs-java
 
     steps:
       - name: Checkout theme repo

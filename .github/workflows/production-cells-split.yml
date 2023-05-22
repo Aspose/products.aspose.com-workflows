@@ -64,7 +64,7 @@ jobs:
             find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;=
             mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.cells.sitemap public/sitemap.xml;
       - name: Deploy Cells to S3
-        run: hugo deploy --config "configs/cells.toml" --maxDeletes=0 --target "staging"
+        run: hugo deploy --config "configs/cells.toml" --maxDeletes=0 --target "production" --force
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

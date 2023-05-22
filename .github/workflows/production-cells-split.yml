@@ -2,7 +2,7 @@ name: Cells-Production-Split
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: [staging-complete, dispatch-receiver]
+    types: [production-complete, dispatch-receiver]
   
 jobs:
   deploy:

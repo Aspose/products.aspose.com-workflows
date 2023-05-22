@@ -1,4 +1,4 @@
-name: Cells-Staging-Split
+name: Cells-Production-Split
 on:
   workflow_dispatch:
   repository_dispatch:

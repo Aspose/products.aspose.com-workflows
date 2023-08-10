@@ -12,21 +12,21 @@ jobs:
       with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          ref: change-slides-widget-shortcode
+          ref: feature/SLIDESJAVA-38905-nodejs-java
           fetch-depth: 0 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
-          hugo-version: 'latest'
+          hugo-version: '0.101.0'
           extended: true
     - name: Install autoprefixer
       run:  npm install -D --save autoprefixer
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
+      run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Find and replace domain name
-      run: find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
+      run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/products.aspose.com/products-qa.aspose.com/g {} +
     - name: Build Slides
       run: hugo --config "configs/slides.toml" -c "content/slides" -b "https://products-qa.aspose.com/slides" --cleanDestinationDir --minify
     - name: Deploy Slides to S3

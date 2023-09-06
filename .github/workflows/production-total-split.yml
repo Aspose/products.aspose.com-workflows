@@ -28,6 +28,7 @@ jobs:
           - reporting-services
           - nodejs-java
           - php-java
+          - javascript-cpp
 
     steps:
       - name: Checkout theme repo

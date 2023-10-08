@@ -19,6 +19,7 @@ jobs:
           - sharepoint
           - python-net
           - python-java
+          - php-java
           - family
           - jasperreports
           - java

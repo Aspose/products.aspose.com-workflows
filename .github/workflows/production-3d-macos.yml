@@ -1,0 +1,35 @@
+name: 3D-Production-macOS
+
+on:
+  repository_dispatch:
+    types: [production-complete]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout theme repo
+      uses: actions/checkout@main
+      with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 0 
+    - name: Setup Hugo
+      uses: peaceiris/actions-hugo@v2
+      with:
+          hugo-version: '0.101.0'
+          extended: true
+    - name: Install autoprefixer
+      run:  npm install -D --save autoprefixer
+    - name: Install postcss-cli
+      run:  npm install -D --save postcss-cli
+    - name: Find and replace url param in frontmatter
+      run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
+    - name: Build 3D
+      run: hugo --config "configs/3d.toml" -c "content/3d" -b "https://products.aspose.com/3d" --cleanDestinationDir --minify
+    - name: Deploy 3D to S3
+      run: hugo deploy --config "configs/3d.toml" --maxDeletes=-1 --target "production" --force
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

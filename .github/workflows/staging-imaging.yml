@@ -15,7 +15,7 @@ jobs:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
           fetch-depth: 0
-          ref: andrey.m.IMAGINGNET-6598
+          ref: samer.el-khatib.IMAGINGNET-6118_17
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:

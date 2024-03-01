@@ -1,0 +1,41 @@
+name: Medical-Production
+
+on:
+  repository_dispatch:
+    types: [production-complete]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout theme repo
+      uses: actions/checkout@main
+      with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 0 
+    - name: Setup Hugo
+      uses: peaceiris/actions-hugo@v2
+      with:
+          hugo-version: '0.110.0'
+          extended: true
+    - name: Install autoprefixer
+      run:  npm install -D --save autoprefixer
+    - name: Install postcss-cli
+      run:  npm install -D --save postcss-cli
+    - name: Build Medical
+      run: hugo --config "configs/medical.toml" -c "content/medical" -b "https://products.aspose.com/medical" --cleanDestinationDir --minify
+    - name: Deploy Medical to S3
+      run: hugo deploy --config "configs/medical.toml" --maxDeletes=-1 --target "production" --force
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    - name: Invalidate CloudFront
+      uses: chetan/invalidate-cloudfront-action@v2
+      env:
+        DISTRIBUTION: ${{ secrets.AWS_DISTRIBUTION_STAGE }}
+        PATHS: "/medical/*"
+        AWS_REGION: "us-west-2"
+        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

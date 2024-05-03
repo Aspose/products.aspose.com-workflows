@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-22.04
+    runs-on: macos-13
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main

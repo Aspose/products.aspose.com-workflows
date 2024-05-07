@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 360
     steps:
     - name: Checkout theme repo
@@ -13,12 +13,12 @@ jobs:
       with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          ref: samer.el-khatib.IMAGINGNET-7074_with_content
+          ref: andrey.m.IMAGINGNET-7119
           fetch-depth: 0 
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
-          hugo-version: 'latest'
+          hugo-version: '0.101.0'
           extended: true
     - name: Install autoprefixer
       run:  npm install -D --save autoprefixer

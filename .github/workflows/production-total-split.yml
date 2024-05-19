@@ -29,7 +29,8 @@ jobs:
           - nodejs-java
           - php-java
           - javascript-cpp
-          - nodejs-cpp          
+          - nodejs-cpp
+          - nodejs-net
 
     steps:
       - name: Checkout theme repo

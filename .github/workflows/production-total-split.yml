@@ -31,6 +31,7 @@ jobs:
           - javascript-cpp
           - nodejs-cpp
           - nodejs-net
+          - go-cpp          
 
     steps:
       - name: Checkout theme repo

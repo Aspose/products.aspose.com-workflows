@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   repository_dispatch:
     types: [production-complete, dispatch-receiver]
-  
+
 jobs:
   deploy:
     runs-on: macos-13
@@ -29,6 +29,8 @@ jobs:
           - reporting-services
           - nodejs-java
           - nodejs-cpp
+          - go-cpp
+          - javascript-cpp
 
     steps:
       - name: Checkout theme repo

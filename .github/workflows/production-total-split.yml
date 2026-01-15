@@ -72,27 +72,22 @@ jobs:
             find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
             mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.sitemap public/sitemap.xml;
             mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.rss public/index.xml;
-      - name: Debug AWS CLI + endpoint
-        env:
-          AWS_EC2_METADATA_DISABLED: "true"
-        run: |
-          set -euo pipefail
-          aws --version
-          echo "AWS_ENDPOINT_URL=$AWS_ENDPOINT_URL"
       - name: Force S3 path-style addressing for Ceph
         env:
           AWS_EC2_METADATA_DISABLED: "true"
         run: |
           aws configure set default.s3.addressing_style path
-      - name: Deploy to Ceph via aws s3 sync
+
+      - name: Sync to Ceph S3 Bucket
         env:
           AWS_EC2_METADATA_DISABLED: "true"
-          AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.CEPH_DEFAULT_REGION }}
-          AWS_ENDPOINT_URL: ${{ secrets.CEPH_PROD_ENDPOINT_URL_FRONT }}
         run: |
-          aws s3 sync ./public/ s3://products.aspose.com/ \
-            --endpoint-url "$AWS_ENDPOINT_URL" \
-            --delete
+          set -euo pipefail
+          echo "Deploying to Ceph S3 bucket..."
+          echo "Endpoint: $AWS_ENDPOINT_URL"
+          test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
+          aws s3 sync ./public/ s3://products-aspose-com/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --acl public-read \
+            --delete

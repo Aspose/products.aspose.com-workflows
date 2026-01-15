@@ -62,7 +62,8 @@ jobs:
       - name: Display config.json
         run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
       - name: Sanity check endpoint value
-        run: echo "Endpoint: $AWS_ENDPOINT_URL"
+        run: |
+          echo "Endpoint: ${{ env.AWS_ENDPOINT_URL }}"
       - name: Build Total
         run: hugo --config "configs/total.toml","config.json" -c "content/total" -b "https://products.aspose.com/total" --cleanDestinationDir --minify
           --templateMetrics --templateMetricsHints --enableGitInfo

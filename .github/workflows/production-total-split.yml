@@ -72,6 +72,18 @@ jobs:
             find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
             mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.sitemap public/sitemap.xml;
             mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.rss public/index.xml;
+      - name: Debug AWS CLI + endpoint
+        env:
+          AWS_EC2_METADATA_DISABLED: "true"
+        run: |
+          set -euo pipefail
+          aws --version
+          echo "AWS_ENDPOINT_URL=$AWS_ENDPOINT_URL"
+      - name: Force S3 path-style addressing for Ceph
+        env:
+          AWS_EC2_METADATA_DISABLED: "true"
+        run: |
+          aws configure set default.s3.addressing_style path
       - name: Deploy to Ceph via aws s3 sync
         env:
           AWS_EC2_METADATA_DISABLED: "true"

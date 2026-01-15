@@ -8,9 +8,9 @@ jobs:
   deploy:
     runs-on: macos-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_QA_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_QA_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.CEPH_DEFAULT_REGION }}
     continue-on-error: true
     strategy:
       fail-fast: false
@@ -70,5 +70,5 @@ jobs:
       - name: Deploy Total to S3
         run: hugo deploy --config "configs/total.toml" --maxDeletes=0 --target "staging"
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_QA_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_QA_SECRET_ACCESS_KEY }}

@@ -13,7 +13,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
       AWS_EC2_METADATA_DISABLED: "true"
-      AWS_ENDPOINT_URL: https://s3-admin.dynabic.com
+      AWS_ENDPOINT_URL: https://s3.dynabic.com
 
     steps:
       - name: Checkout site repo (sparse)
@@ -52,8 +52,7 @@ jobs:
         run: npm install
 
       - name: Install PostCSS dependencies
-        run: |
-          npm install -D autoprefixer postcss postcss-cli
+        run: npm install -D autoprefixer postcss postcss-cli
 
       - name: Find and replace url param in frontmatter
         uses: jacobtomlinson/gha-find-replace@v2
@@ -79,6 +78,12 @@ jobs:
           else
             echo "home-ru.sitemap not found, skipping rename"
           fi
+
+      - name: Test Ceph endpoint connectivity
+        run: |
+          echo "Testing endpoint: $AWS_ENDPOINT_URL"
+          curl -I --max-time 20 "$AWS_ENDPOINT_URL" || true
+          aws s3 ls --endpoint-url "$AWS_ENDPOINT_URL" || true
 
       - name: Sync to Ceph S3 Bucket
         run: |

@@ -34,6 +34,7 @@ jobs:
             i18n
             package.json
             package-lock.json
+            postcss.config.js
           sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
@@ -49,6 +50,10 @@ jobs:
 
       - name: Install Node.js dependencies
         run: npm install
+
+      - name: Install PostCSS dependencies
+        run: |
+          npm install -D autoprefixer postcss postcss-cli
 
       - name: Find and replace url param in frontmatter
         uses: jacobtomlinson/gha-find-replace@v2
@@ -77,6 +82,7 @@ jobs:
 
       - name: Sync to Ceph S3 Bucket
         run: |
+          echo "Deploying to Ceph S3 bucket..."
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --delete

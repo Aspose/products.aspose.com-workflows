@@ -8,41 +8,55 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main
       with:
-          repository: Aspose/products.aspose.com
-          token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0 
+        repository: Aspose/products.aspose.com
+        token: ${{ secrets.REPO_TOKEN }}
+        fetch-depth: 0
+
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
-          hugo-version: '0.110.0'
-          extended: true
+        hugo-version: '0.110.0'
+        extended: true
+
     - name: Install autoprefixer
-      run:  npm install -D --save autoprefixer
+      run: npm install -D --save autoprefixer
+
     - name: Install postcss-cli
-      run:  npm install -D --save postcss-cli
+      run: npm install -D --save postcss-cli
+
     - name: Find and replace url param in frontmatter
       uses: jacobtomlinson/gha-find-replace@v2
       with:
         find: "url:"
         replace: "url_ignore:"
         include: "_index.md"
+
     - name: Find and replace image url domain
       uses: jacobtomlinson/gha-find-replace@v2
       with:
         find: "logoImageSrc=\"https://www.aspose.cloud/"
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
+
     - name: Build Home
       run: hugo --config "configs/home.toml" -c "content" -b "https://products.aspose.com/" --cleanDestinationDir --minify --disableKinds 404
-    - name: Prepare public folder
-      run: mv /home/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/home-ru.sitemap public/ru-sitemaps.xml;
+
+    - name: Install AWS CLI
+      run: sudo apt-get update && sudo apt-get install -y awscli
+
     - name: Deploy Home to Ceph
-      run: hugo deploy --config "configs/home.toml" --maxDeletes=0 --target "production" --force
+      run: |
+        aws s3 sync public/ s3://products-aspose-com/ \
+          --endpoint-url "${AWS_ENDPOINT_URL}" \
+          --region "${AWS_DEFAULT_REGION}" \
+          --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ secrets.CEPH_DEFAULT_REGION }}
+        AWS_ENDPOINT_URL: ${{ secrets.CEPH_PROD_ENDPOINT_URL }}

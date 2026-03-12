@@ -16,9 +16,11 @@ jobs:
       AWS_ENDPOINT_URL: https://s3-admin.dynabic.com
 
     steps:
-      - name: Checkout repository
+      - name: Checkout site repo
         uses: actions/checkout@v4
         with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -61,8 +63,6 @@ jobs:
         run: |
           if [ -f home-ru.sitemap ]; then
             mv home-ru.sitemap public/ru-sitemaps.xml
-          elif [ -f /home/runner/work/${GITHUB_REPOSITORY#*/}/${GITHUB_REPOSITORY#*/}/home-ru.sitemap ]; then
-            mv /home/runner/work/${GITHUB_REPOSITORY#*/}/${GITHUB_REPOSITORY#*/}/home-ru.sitemap public/ru-sitemaps.xml
           else
             echo "home-ru.sitemap not found, skipping rename"
           fi

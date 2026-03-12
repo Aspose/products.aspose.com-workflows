@@ -16,12 +16,25 @@ jobs:
       AWS_ENDPOINT_URL: https://s3-admin.dynabic.com
 
     steps:
-      - name: Checkout site repo
+      - name: Checkout site repo (sparse)
         uses: actions/checkout@v4
         with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            configs
+            content/home
+            layouts
+            themes
+            assets
+            static
+            data
+            i18n
+            package.json
+            package-lock.json
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,12 +48,7 @@ jobs:
           extended: true
 
       - name: Install Node.js dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm install
 
       - name: Find and replace url param in frontmatter
         uses: jacobtomlinson/gha-find-replace@v2
@@ -69,7 +77,6 @@ jobs:
 
       - name: Sync to Ceph S3 Bucket
         run: |
-          echo "Deploying to Ceph S3 bucket..."
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --delete

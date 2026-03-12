@@ -51,10 +51,11 @@ jobs:
 
     - name: Deploy Home to Ceph
       run: |
-        aws s3 sync public/ s3://products-aspose-com/ \
-          --endpoint-url "${AWS_ENDPOINT_URL}" \
-          --region "${AWS_DEFAULT_REGION}" \
-          --delete
+          echo "Deploying to Ceph S3 bucket..."
+          aws s3 sync ./public/ s3://products-aspose-com/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --acl public-read \
+            --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PRODHOME_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}

@@ -56,7 +56,7 @@ jobs:
           --region "${AWS_DEFAULT_REGION}" \
           --delete
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PRODHOME_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ secrets.CEPH_DEFAULT_REGION }}
         AWS_ENDPOINT_URL: ${{ secrets.CEPH_PROD_ENDPOINT_URL }}

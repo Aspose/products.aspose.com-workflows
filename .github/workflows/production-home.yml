@@ -46,16 +46,17 @@ jobs:
     - name: Build Home
       run: hugo --config "configs/home.toml" -c "content" -b "https://products.aspose.com/" --cleanDestinationDir --minify --disableKinds 404
 
-    - name: Install AWS CLI
-      run: sudo apt-get update && sudo apt-get install -y awscli
+    - name: Deploy Home to S3
+      run: hugo deploy --config "configs/home.toml" --maxDeletes=0 --target "production" --force
 
     - name: Deploy Home to Ceph
       run: |
           echo "Deploying to Ceph S3 bucket..."
-          aws s3 sync ./public/ s3://products-aspose-com/ \
-            --endpoint-url "$AWS_ENDPOINT_URL" \
-            --acl public-read \
-            --delete
+          aws s3 sync public/ s3://products-aspose-com/ \
+            --endpoint-url "${AWS_ENDPOINT_URL}" \
+            --region "${AWS_DEFAULT_REGION}" \
+            --delete \
+            --cache-control "public,max-age=3600"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PRODHOME_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}

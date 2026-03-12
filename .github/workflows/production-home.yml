@@ -1,4 +1,4 @@
-name: Home-Production
+name: Home-Production-Ceph
 
 on:
   repository_dispatch:
@@ -8,57 +8,59 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_ENDPOINT_URL: https://s3-admin.dynabic.com
 
     steps:
-    - name: Checkout theme repo
-      uses: actions/checkout@main
-      with:
-        repository: Aspose/products.aspose.com
-        token: ${{ secrets.REPO_TOKEN }}
-        fetch-depth: 0
+      - name: Checkout theme repo
+        uses: actions/checkout@v4
+        with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 0
 
-    - name: Setup Hugo
-      uses: peaceiris/actions-hugo@v2
-      with:
-        hugo-version: '0.110.0'
-        extended: true
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-    - name: Install autoprefixer
-      run: npm install -D --save autoprefixer
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.110.0'
+          extended: true
 
-    - name: Install postcss-cli
-      run: npm install -D --save postcss-cli
+      - name: Install Node.js dependencies
+        run: npm install
 
-    - name: Find and replace url param in frontmatter
-      uses: jacobtomlinson/gha-find-replace@v2
-      with:
-        find: "url:"
-        replace: "url_ignore:"
-        include: "_index.md"
+      - name: Find and replace url param in frontmatter
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
+          find: "url:"
+          replace: "url_ignore:"
+          include: "_index.md"
 
-    - name: Find and replace image url domain
-      uses: jacobtomlinson/gha-find-replace@v2
-      with:
-        find: "logoImageSrc=\"https://www.aspose.cloud/"
-        replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
-        include: "_index.md"
+      - name: Find and replace image url domain
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
+          find: 'logoImageSrc="https://www.aspose.cloud/'
+          replace: 'logoImageSrc="https://cms.admin.containerize.com/'
+          include: "_index.md"
 
-    - name: Build Home
-      run: hugo --config "configs/home.toml" -c "content" -b "https://products.aspose.com/" --cleanDestinationDir --minify --disableKinds 404
+      - name: Build Home
+        run: hugo --config "configs/home.toml" -c "content" -b "https://products.aspose.com/" --cleanDestinationDir --minify --disableKinds 404
 
-    - name: Deploy Home to S3
-      run: hugo deploy --config "configs/home.toml" --maxDeletes=0 --target "production" --force
+      - name: Prepare public folder
+        run: |
+          mv /home/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/home-ru.sitemap public/ru-sitemaps.xml
 
-    - name: Deploy Home to Ceph
-      run: |
+      - name: Sync to Ceph S3 Bucket
+        run: |
           echo "Deploying to Ceph S3 bucket..."
-          aws s3 sync public/ s3://products-aspose-com/ \
-            --endpoint-url "${AWS_ENDPOINT_URL}" \
-            --region "${AWS_DEFAULT_REGION}" \
-            --delete \
-            --cache-control "public,max-age=3600"
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PRODHOME_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: ${{ secrets.CEPH_DEFAULT_REGION }}
-        AWS_ENDPOINT_URL: ${{ secrets.CEPH_PROD_ENDPOINT_URL }}
+          aws s3 sync ./public/ s3://products-aspose-com/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --delete

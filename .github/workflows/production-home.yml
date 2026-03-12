@@ -16,17 +16,16 @@ jobs:
       AWS_ENDPOINT_URL: https://s3-admin.dynabic.com
 
     steps:
-      - name: Checkout theme repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: Aspose/products.aspose.com
-          token: ${{ secrets.REPO_TOKEN }}
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: npm
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
@@ -35,7 +34,12 @@ jobs:
           extended: true
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Find and replace url param in frontmatter
         uses: jacobtomlinson/gha-find-replace@v2
@@ -56,7 +60,13 @@ jobs:
 
       - name: Prepare public folder
         run: |
-          mv /home/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/home-ru.sitemap public/ru-sitemaps.xml
+          if [ -f home-ru.sitemap ]; then
+            mv home-ru.sitemap public/ru-sitemaps.xml
+          elif [ -f /home/runner/work/${GITHUB_REPOSITORY#*/}/${GITHUB_REPOSITORY#*/}/home-ru.sitemap ]; then
+            mv /home/runner/work/${GITHUB_REPOSITORY#*/}/${GITHUB_REPOSITORY#*/}/home-ru.sitemap public/ru-sitemaps.xml
+          else
+            echo "home-ru.sitemap not found, skipping rename"
+          fi
 
       - name: Sync to Ceph S3 Bucket
         run: |

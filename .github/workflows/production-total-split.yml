@@ -131,3 +131,11 @@ jobs:
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read
+            
+      - name: Purge BunnyCDN
+        if: success()
+        run: |
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com" \
+            "https://api.dynabic.com/bn/purge?async=true"            

@@ -1,17 +1,20 @@
 name: Total-Production-Split
+
 on:
   workflow_dispatch:
   repository_dispatch:
     types: [production-complete]
-  
+
 jobs:
   deploy:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.CEPH_DEFAULT_REGION }}
       AWS_ENDPOINT_URL: ${{ secrets.CEPH_PROD_ENDPOINT_URL_FRONT }}
+      AWS_EC2_METADATA_DISABLED: "true"
+
     strategy:
       fail-fast: false
       matrix:
@@ -31,56 +34,86 @@ jobs:
           - javascript-cpp
           - nodejs-cpp
           - nodejs-net
-          - go-cpp          
+          - go-cpp
 
     steps:
-      - name: Checkout theme repo
-        uses: actions/checkout@main
+      - name: Checkout site repo (sparse)
+        uses: actions/checkout@v4
         with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            configs
+            content/total
+            layouts
+            themes
+            assets
+            static
+            data
+            i18n
+            package.json
+            package-lock.json
+            postcss.config.js
+            config
+          sparse-checkout-cone-mode: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
+
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2.4.13
+        uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: 0.101.0
+          hugo-version: '0.101.0'
           extended: true
-      - name: Install Node.js Dependencies
+
+      - name: Install Node.js dependencies
         run: npm install
-      - name: Install autoprefixer
-        run: npm install -D --save autoprefixer
-      - name: Install postcss-cli
-        run: npm install -D --save postcss-cli
+
+      - name: Install PostCSS dependencies
+        run: npm install -D autoprefixer postcss postcss-cli
+
       - name: Configure build environment
         env:
           CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
         run: npm run configure
+
       - name: Display config.json
-        run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
+        run: cat config.json
+
       - name: Sanity check endpoint value
         run: |
-          echo "Endpoint: ${{ env.AWS_ENDPOINT_URL }}"
+          echo "Endpoint: $AWS_ENDPOINT_URL"
+
       - name: Build Total
-        run: hugo --config "configs/total.toml","config.json" -c "content/total" -b "https://products.aspose.com/total" --cleanDestinationDir --minify
-          --templateMetrics --templateMetricsHints --enableGitInfo
+        run: |
+          hugo --config "configs/total.toml,config.json" \
+            -c "content/total" \
+            -b "https://products.aspose.com/total" \
+            --cleanDestinationDir \
+            --minify \
+            --templateMetrics \
+            --templateMetricsHints \
+            --enableGitInfo
+
       - name: Prepare public folder
         run: |
-            find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
-            mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.sitemap public/sitemap.xml;
-            mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.rss public/index.xml;
+          find public -iname 'sitemap.xml' -execdir mv -i '{}' "${{ matrix.configure_one_product }}.xml" \;
+          if [ -f total.sitemap ]; then
+            mv total.sitemap public/sitemap.xml
+          fi
+          if [ -f total.rss ]; then
+            mv total.rss public/index.xml
+          fi
+
       - name: Force S3 path-style addressing for Ceph
-        env:
-          AWS_EC2_METADATA_DISABLED: "true"
         run: |
           aws configure set default.s3.addressing_style path
 
       - name: Sync to Ceph S3 Bucket
-        env:
-          AWS_EC2_METADATA_DISABLED: "true"
         run: |
           set -euo pipefail
           echo "Deploying to Ceph S3 bucket..."
@@ -89,5 +122,4 @@ jobs:
 
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
-            --acl public-read \
-            --delete
+            --acl public-read

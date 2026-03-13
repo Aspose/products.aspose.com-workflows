@@ -79,15 +79,18 @@ jobs:
             echo "home-ru.sitemap not found, skipping rename"
           fi
 
-      - name: Test Ceph endpoint connectivity
-        run: |
-          echo "Testing endpoint: $AWS_ENDPOINT_URL"
-          curl -I --max-time 20 "$AWS_ENDPOINT_URL" || true
-          aws s3 ls --endpoint-url "$AWS_ENDPOINT_URL" || true
-
       - name: Sync to Ceph S3 Bucket
         run: |
+          set -euo pipefail
           echo "Deploying to Ceph S3 bucket..."
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --delete
+
+      - name: Purge BunnyCDN
+        if: success()
+        run: |
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com" \
+            "https://api.dynabic.com/bn/purge?async=true" || true

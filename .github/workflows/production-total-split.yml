@@ -38,7 +38,7 @@ jobs:
 
     steps:
       - name: Checkout site repo (sparse)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
@@ -61,12 +61,13 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 18
+          package-manager-cache: false
 
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
+        uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: '0.101.0'
           extended: true
@@ -76,13 +77,6 @@ jobs:
 
       - name: Install PostCSS dependencies
         run: npm install -D autoprefixer postcss postcss-cli
-
-      - name: Verify configure files
-        run: |
-          pwd
-          ls
-          ls scripts || true
-          ls config || true
 
       - name: Configure build environment
         env:
@@ -131,11 +125,11 @@ jobs:
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read
-            
+
       - name: Purge BunnyCDN
         if: success()
         run: |
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
             --data-urlencode "url=https://products.aspose.com" \
-            "https://api.dynabic.com/bn/purge?async=true"            
+            "https://api.dynabic.com/bn/purge?async=true" || true

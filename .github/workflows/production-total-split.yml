@@ -57,6 +57,7 @@ jobs:
             package-lock.json
             postcss.config.js
             config
+            scripts
           sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
@@ -75,6 +76,13 @@ jobs:
 
       - name: Install PostCSS dependencies
         run: npm install -D autoprefixer postcss postcss-cli
+
+      - name: Verify configure files
+        run: |
+          pwd
+          ls
+          ls scripts || true
+          ls config || true
 
       - name: Configure build environment
         env:

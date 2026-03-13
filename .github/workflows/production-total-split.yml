@@ -66,11 +66,14 @@ jobs:
           node-version: 18
           package-manager-cache: false
 
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
-        with:
-          hugo-version: '0.101.0'
-          extended: true
+      - name: Install Hugo Extended
+        run: |
+          set -euo pipefail
+          HUGO_VERSION="0.101.0"
+          DEB="hugo_extended_${HUGO_VERSION}_Linux-64bit.deb"
+          wget -q "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/${DEB}"
+          sudo dpkg -i "${DEB}"
+          hugo version
 
       - name: Install Node.js dependencies
         run: npm install

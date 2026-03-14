@@ -129,7 +129,5 @@ jobs:
       - name: Purge BunnyCDN
         if: success()
         run: |
-          curl -siG \
-            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
-            --data-urlencode "url=https://products.aspose.com" \
-            "https://api.dynabic.com/bn/purge?async=true" || true
+          curl -X POST "https://api.bunny.net/pullzone/${{ secrets.BUNNY_PULLZONE_ID }}/purgeCache" \
+            -H "AccessKey: ${{ secrets.BUNNY_API_KEY }}" || true

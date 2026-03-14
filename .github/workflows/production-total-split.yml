@@ -129,5 +129,7 @@ jobs:
       - name: Purge Bunny cache for Total
         if: success()
         run: |
-          curl -X POST "https://api.bunny.net/purge?url=https://products.aspose.com/total/net/&async=true&exactPath=true" \
-            -H "AccessKey: ${{ secrets.BUNNY_API_KEY }}" || true
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com/total/net" \
+            "https://api.dynabic.com/bn/purge?async=true" || true

@@ -124,14 +124,10 @@ jobs:
 
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
-            --acl public-read \
-            --exclude ".gitignore" \
-            --page-size 100 \
-            --cli-read-timeout 300 \
-            --cli-connect-timeout 60
+            --acl public-read
 
-      - name: Purge Bunny cache for /total
+      - name: Purge BunnyCDN
         if: success()
         run: |
-          curl -X POST "https://api.bunny.net/purge?url=https://products.aspose.com/total/&async=true&exactPath=true" \
+          curl -X POST "https://api.bunny.net/pullzone/${{ secrets.BUNNY_PULLZONE_ID }}/purgeCache" \
             -H "AccessKey: ${{ secrets.BUNNY_API_KEY }}" || true

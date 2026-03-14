@@ -126,8 +126,8 @@ jobs:
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read
 
-      - name: Purge BunnyCDN
+      - name: Purge Bunny cache for Total
         if: success()
         run: |
-          curl -X POST "https://api.bunny.net/pullzone/${{ secrets.BUNNY_PULLZONE_ID }}/purgeCache" \
+          curl -X POST "https://api.bunny.net/purge?url=https://products.aspose.com/total/&async=true&exactPath=true" \
             -H "AccessKey: ${{ secrets.BUNNY_API_KEY }}" || true

@@ -122,9 +122,13 @@ jobs:
           echo "Endpoint: $AWS_ENDPOINT_URL"
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
+      - name: Sync to Ceph S3 Bucket
+        run: |
+          echo "Deploying to Ceph S3 bucket..."
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
-            --acl public-read
+            --acl public-read \
+            --delete
 
       - name: Purge Bunny cache for Total
         if: success()

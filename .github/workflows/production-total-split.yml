@@ -71,7 +71,7 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: '0.110.0'
+          hugo-version: "0.110.0"
           extended: true
 
       - name: Install Node.js dependencies
@@ -113,8 +113,7 @@ jobs:
           fi
 
       - name: Force S3 path-style addressing for Ceph
-        run: |
-          aws configure set default.s3.addressing_style path
+        run: aws configure set default.s3.addressing_style path
 
       - name: Sync to Ceph S3 Bucket
         env:
@@ -122,15 +121,12 @@ jobs:
           AWS_MAX_ATTEMPTS: "10"
         run: |
           set -euo pipefail
-
           echo "Deploying to Ceph S3 bucket..."
           echo "Product: ${{ matrix.configure_one_product }}"
           echo "Endpoint: $AWS_ENDPOINT_URL"
-
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          aws s3 sync ./public/ \
-            s3://products-aspose-com/total/${{ matrix.configure_one_product }}/ \
+          aws s3 sync ./public/ s3://products-aspose-com/total/${{ matrix.configure_one_product }}/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read \
             --delete \
@@ -140,8 +136,6 @@ jobs:
       - name: Purge Bunny cache for Total
         if: success()
         run: |
-          echo "Purging Bunny cache for ${{ matrix.configure_one_product }}"
-
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
             --data-urlencode "url=https://products.aspose.com/total/${{ matrix.configure_one_product }}/" \
@@ -149,5 +143,5 @@ jobs:
 
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
-            --data-urlencode "url=https://products.aspose.com/total/${{ matrix.configure_one_product }}/" \
+            --data-urlencode "url=https://products.aspose.com/total/${{ matrix.configure_one_product }}/index.html" \
             "https://api.dynabic.com/bn/purge?async=true" || true

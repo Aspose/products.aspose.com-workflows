@@ -11,12 +11,13 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.CEPH_DEFAULT_REGION }}
-      AWS_ENDPOINT_URL: ${{ secrets.CEPH_PROD_ENDPOINT_URL_FRONT }}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: https://s3.dynabic.com
       AWS_EC2_METADATA_DISABLED: "true"
 
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         configure_one_product:
           - sharepoint
@@ -35,7 +36,6 @@ jobs:
           - nodejs-cpp
           - nodejs-net
           - go-cpp
-
     steps:
       - name: Checkout site repo (sparse)
         uses: actions/checkout@v5
@@ -130,10 +130,10 @@ jobs:
             --cli-read-timeout 300 \
             --cli-connect-timeout 60
 
-      - name: Purge Bunny cache for Total
+      - name: Purge Bunny cache for product
         if: success()
         run: |
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
-            --data-urlencode "url=https://products.aspose.com/total/net/" \
+            --data-urlencode "url=https://products.aspose.com/total/${{ matrix.configure_one_product }}/" \
             "https://api.dynabic.com/bn/purge?async=true" || true

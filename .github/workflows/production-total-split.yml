@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
@@ -17,6 +18,7 @@ jobs:
 
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         configure_one_product:
           - sharepoint
@@ -87,8 +89,7 @@ jobs:
         run: cat config.json
 
       - name: Sanity check endpoint value
-        run: |
-          echo "Endpoint: $AWS_ENDPOINT_URL"
+        run: echo "Endpoint: $AWS_ENDPOINT_URL"
 
       - name: Build Total
         run: |
@@ -116,22 +117,37 @@ jobs:
           aws configure set default.s3.addressing_style path
 
       - name: Sync to Ceph S3 Bucket
+        env:
+          AWS_RETRY_MODE: standard
+          AWS_MAX_ATTEMPTS: "10"
         run: |
           set -euo pipefail
+
           echo "Deploying to Ceph S3 bucket..."
+          echo "Product: ${{ matrix.configure_one_product }}"
           echo "Endpoint: $AWS_ENDPOINT_URL"
+
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          aws s3 sync ./public/ s3://products-aspose-com/total/net/ \
+          aws s3 sync ./public/ \
+            s3://products-aspose-com/total/${{ matrix.configure_one_product }}/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read \
             --delete \
-            --no-progress
+            --no-progress \
+            --exclude ".gitignore"
 
       - name: Purge Bunny cache for Total
         if: success()
         run: |
+          echo "Purging Bunny cache for ${{ matrix.configure_one_product }}"
+
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
-            --data-urlencode "url=https://products.aspose.com/total/net/" \
+            --data-urlencode "url=https://products.aspose.com/total/${{ matrix.configure_one_product }}/" \
+            "https://api.dynabic.com/bn/purge?async=true" || true
+
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com/total/${{ matrix.configure_one_product }}/" \
             "https://api.dynabic.com/bn/purge?async=true" || true

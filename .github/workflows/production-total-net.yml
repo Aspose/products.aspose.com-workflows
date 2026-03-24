@@ -136,3 +136,10 @@ jobs:
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
             --data-urlencode "url=https://products.aspose.com/total/net/" \
             "https://api.dynabic.com/bn/purge?async=true" || true
+
+      # -----------------------------
+      # bucket in ceph
+      # -----------------------------
+      - name: bucket in ceph
+        run: aws s3 ls s3://products-aspose-com --endpoint-url "$AWS_ENDPOINT_URL"
+            

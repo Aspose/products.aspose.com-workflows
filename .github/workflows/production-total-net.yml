@@ -81,7 +81,7 @@ jobs:
       # -----------------------------
       - name: Build Total (NET only)
         run: |
-          hugo --config "configs/total.toml,config.json" \
+          hugo --config "configs/total.toml" \
             -c "content/total" \
             -b "https://products.aspose.com/total" \
             --cleanDestinationDir \

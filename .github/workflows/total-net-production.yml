@@ -1,0 +1,138 @@
+name: Total-NET-Production
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [production-complete-net]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: https://s3.dynabic.com
+      AWS_EC2_METADATA_DISABLED: "true"
+      CONFIGURE_ONE_PRODUCT: net
+
+    steps:
+      # -----------------------------
+      # Checkout
+      # -----------------------------
+      - name: Checkout site repo (sparse)
+        uses: actions/checkout@v5
+        with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            configs
+            content/total
+            layouts
+            themes
+            assets
+            static
+            data
+            i18n
+            package.json
+            package-lock.json
+            postcss.config.js
+            config
+            scripts
+          sparse-checkout-cone-mode: false
+
+      # -----------------------------
+      # Setup
+      # -----------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+          package-manager-cache: false
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.110.0'
+          extended: true
+
+      # -----------------------------
+      # Install
+      # -----------------------------
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install -D autoprefixer postcss postcss-cli
+
+      # -----------------------------
+      # Configure ONLY net
+      # -----------------------------
+      - name: Configure build for NET
+        run: npm run configure
+
+      - name: Display config.json
+        run: cat config.json
+
+      # -----------------------------
+      # Build
+      # -----------------------------
+      - name: Build Total (NET only)
+        run: |
+          hugo --config "configs/total.toml,config.json" \
+            -c "content/total" \
+            -b "https://products.aspose.com/total" \
+            --cleanDestinationDir \
+            --minify \
+            --templateMetrics \
+            --templateMetricsHints \
+            --enableGitInfo
+
+      # -----------------------------
+      # Prepare output
+      # -----------------------------
+      - name: Prepare public folder
+        run: |
+          find public -iname 'sitemap.xml' -execdir mv '{}' "net.xml" \;
+          if [ -f total.sitemap ]; then
+            mv -f total.sitemap public/sitemap.xml
+          fi
+          if [ -f total.rss ]; then
+            mv -f total.rss public/index.xml
+          fi
+
+      # -----------------------------
+      # S3 config
+      # -----------------------------
+      - name: Force S3 path-style addressing for Ceph
+        run: aws configure set default.s3.addressing_style path
+
+      # -----------------------------
+      # Deploy (SAFE now with --delete)
+      # -----------------------------
+      - name: Sync to Ceph S3 Bucket (NET)
+        run: |
+          set -euo pipefail
+          echo "Deploying NET to Ceph..."
+
+          aws s3 sync ./public/ s3://products-aspose-com/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --acl public-read \
+            --exclude ".gitignore" \
+            --delete \
+            --page-size 100 \
+            --cli-read-timeout 300 \
+            --cli-connect-timeout 60
+
+      # -----------------------------
+      # Purge CDN
+      # -----------------------------
+      - name: Purge Bunny cache for NET
+        if: success()
+        run: |
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com/total/net/" \
+            "https://api.dynabic.com/bn/purge?async=true" || true

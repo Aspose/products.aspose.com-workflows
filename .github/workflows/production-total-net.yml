@@ -30,7 +30,7 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             configs
-            content/total
+            content/total/en/net
             layouts
             themes
             assets

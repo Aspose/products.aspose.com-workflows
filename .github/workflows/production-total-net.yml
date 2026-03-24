@@ -142,4 +142,15 @@ jobs:
       # -----------------------------
       - name: bucket in ceph
         run: aws s3 ls s3://products-aspose-com --endpoint-url "$AWS_ENDPOINT_URL"
+        
+      - name: Compare local vs S3
+        run: |
+          echo "LOCAL files:"
+          find public -type f | sort > local.txt
+      
+          echo "REMOTE files:"
+          aws s3 ls s3://products-aspose-com/ --recursive --endpoint-url "$AWS_ENDPOINT_URL" | awk '{print $4}' | sort > remote.txt
+      
+          echo "Diff:"
+          diff local.txt remote.txt || true        
             

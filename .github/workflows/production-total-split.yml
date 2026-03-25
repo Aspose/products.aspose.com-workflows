@@ -122,7 +122,7 @@ jobs:
           echo "Endpoint: $AWS_ENDPOINT_URL"
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          aws s3 sync ./public/ s3://products-aspose-com/ \
+          aws s3 sync ./public/ s3://products-aspose-com/total/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read \
             --exclude ".gitignore" \

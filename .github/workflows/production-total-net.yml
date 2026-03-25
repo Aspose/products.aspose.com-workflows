@@ -117,7 +117,7 @@ jobs:
           set -euo pipefail
           echo "Deploying NET to Ceph..."
 
-          aws s3 sync ./public/ s3://products-aspose-com/ \
+          aws s3 sync ./public/ s3://products-aspose-com/total/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read \
             --exclude ".gitignore" \

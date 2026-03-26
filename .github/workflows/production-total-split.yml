@@ -134,8 +134,11 @@ jobs:
             echo "❌ ./content/total NOT found"
           fi
 
-          echo "📂 Parent directory:"
-          ls -lah ..    
+          echo "📍 SOURCE ROOT (working directory):"
+          pwd
+
+          echo "📂 Root contents:"
+          ls -lah
 
           echo "📂 All folders (2 levels):"
           find . -maxdepth 2 -type d   

@@ -143,8 +143,8 @@ jobs:
           echo "📂 find . -maxdepth 2 -type d - All folders (2 levels):"
           find . -maxdepth 2 -type d   
 
-           echo "📂 aws s3 ls s3://products.aspose.com - Bucket structure:"
-          aws s3 ls s3://products.aspose.com \
+           echo "📂 aws s3 ls s3://products-aspose-com - Bucket structure:"
+          aws s3 ls s3://products-aspose-com \
           --endpoint-url "$AWS_ENDPOINT_URL"
 
         

@@ -132,6 +132,20 @@ jobs:
           echo "Endpoint: $AWS_ENDPOINT_URL"
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
+          echo "========== SITEMAP DEBUG =========="
+          
+          echo "📂 Repo root:"
+          find . -maxdepth 2 -iname "*sitemap*"
+          
+          echo ""
+          echo "📂 content/total:"
+          find content/total -maxdepth 3 -iname "*sitemap*" 2>/dev/null
+          
+          echo ""
+          echo "📂 public (after build):"
+          find public -maxdepth 3 -iname "*sitemap*" 2>/dev/null
+          
+          echo "==================================="
           echo "📂 ls -lah ./content - Listing top-level of ./content"
           ls -lah ./content
 

@@ -126,13 +126,19 @@ jobs:
           ls -lah ./public
 
           echo "📂 Folder structure (2 levels)"
-          find ./public -maxdepth 2 -type d
+          find ./public -maxdepth 3 -type d
 
           if [ -d "./public/total" ]; then
           echo "✅ Found ./public/total"
           else
             echo "❌ ./public/total NOT found"
           fi
+
+          echo "📂 Parent directory:"
+          ls -lah ..    
+
+          echo "📂 All folders (2 levels):"
+          find . -maxdepth 2 -type d          
 
       - name: Purge Bunny cache for product
         if: success()

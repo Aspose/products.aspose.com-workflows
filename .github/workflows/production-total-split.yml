@@ -122,16 +122,16 @@ jobs:
           echo "Endpoint: $AWS_ENDPOINT_URL"
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          echo "📂 Listing top-level of ./public"
-          ls -lah ./public
+          echo "📂 Listing top-level of ./content"
+          ls -lah ./content
 
           echo "📂 Folder structure (2 levels)"
-          find ./public -maxdepth 3 -type d
+          find ./content -maxdepth 2 -type d
 
-          if [ -d "./public/total" ]; then
-          echo "✅ Found ./public/total"
+          if [ -d "./content/total" ]; then
+          echo "✅ Found ./content/total"
           else
-            echo "❌ ./public/total NOT found"
+            echo "❌ ./content/total NOT found"
           fi
 
           echo "📂 Parent directory:"

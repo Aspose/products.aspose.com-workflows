@@ -122,13 +122,17 @@ jobs:
           echo "Endpoint: $AWS_ENDPOINT_URL"
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          aws s3 sync ./public/ s3://products-aspose-com/total/ \
-            --endpoint-url "$AWS_ENDPOINT_URL" \
-            --acl public-read \
-            --exclude ".gitignore" \
-            --page-size 100 \
-            --cli-read-timeout 300 \
-            --cli-connect-timeout 60
+          echo "📂 Listing top-level of ./public"
+          ls -lah ./public
+
+          echo "📂 Folder structure (2 levels)"
+          find ./public -maxdepth 2 -type d
+
+          if [ -d "./public/total" ]; then
+          echo "✅ Found ./public/total"
+          else
+            echo "❌ ./public/total NOT found"
+          fi
 
       - name: Purge Bunny cache for product
         if: success()

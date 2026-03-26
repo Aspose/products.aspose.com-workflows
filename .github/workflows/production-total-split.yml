@@ -36,6 +36,7 @@ jobs:
           - nodejs-cpp
           - nodejs-net
           - go-cpp
+
     steps:
       - name: Checkout site repo (sparse)
         uses: actions/checkout@v5
@@ -103,13 +104,22 @@ jobs:
 
       - name: Prepare public folder
         run: |
-          find public -iname 'sitemap.xml' -execdir mv -i '{}' "${{ matrix.configure_one_product }}.xml" \;
+          set -euo pipefail
+
+          mkdir -p public/total
+
+          find public -iname 'sitemap.xml' -execdir mv -f '{}' "${{ matrix.configure_one_product }}.xml" \;
+
           if [ -f total.sitemap ]; then
-            mv total.sitemap public/sitemap.xml
+            mv -f total.sitemap public/total/sitemap.xml
           fi
+
           if [ -f total.rss ]; then
-            mv total.rss public/index.xml
+            mv -f total.rss public/total/index.xml
           fi
+
+          echo "Prepared sitemap files:"
+          find public -maxdepth 3 \( -name 'sitemap.xml' -o -name 'index.xml' -o -name '*.xml' \) | sort
 
       - name: Force S3 path-style addressing for Ceph
         run: |
@@ -122,32 +132,13 @@ jobs:
           echo "Endpoint: $AWS_ENDPOINT_URL"
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          echo "📂 ls -lah ./content - Listing top-level of ./content"
-          ls -lah ./content
-
-          echo "📂 find ./content -maxdepth 2 -type d - Folder structure (2 levels)"
-          find ./content -maxdepth 2 -type d
-
-          if [ -d "./content/total" ]; then
-          echo "✅ Found ./content/total"
-          else
-            echo "❌ ./content/total NOT found"
-          fi
-
-          echo "📍 pwd - SOURCE ROOT (working directory):"
-          pwd
-
-          echo "📂 ls -lah - Root contents:"
-          ls -lah
-
-          echo "📂 find . -maxdepth 2 -type d - All folders (2 levels):"
-          find . -maxdepth 2 -type d   
-
-           echo "📂 aws s3 ls s3://products-aspose-com - Bucket structure:"
-          aws s3 ls s3://products-aspose-com \
-          --endpoint-url "$AWS_ENDPOINT_URL"
-
-        
+          aws s3 sync ./public/ s3://products-aspose-com/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --acl public-read \
+            --exclude ".gitignore" \
+            --page-size 100 \
+            --cli-read-timeout 300 \
+            --cli-connect-timeout 60
 
       - name: Purge Bunny cache for product
         if: success()
@@ -155,4 +146,12 @@ jobs:
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
             --data-urlencode "url=https://products.aspose.com/total/${{ matrix.configure_one_product }}/" \
+            "https://api.dynabic.com/bn/purge?async=true" || true
+
+      - name: Purge Bunny cache for total sitemap
+        if: success()
+        run: |
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com/total/sitemap.xml" \
             "https://api.dynabic.com/bn/purge?async=true" || true

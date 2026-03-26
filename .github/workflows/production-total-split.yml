@@ -138,7 +138,15 @@ jobs:
           ls -lah ..    
 
           echo "📂 All folders (2 levels):"
-          find . -maxdepth 2 -type d          
+          find . -maxdepth 2 -type d   
+
+           echo "📂 Bucket structure:"
+          aws s3 ls s3://products-aspose-com \
+          --endpoint-url "$AWS_ENDPOINT_URL"
+
+           echo "📂 Bucket structure content:"
+          aws s3 ls s3://products-aspose-com/content \
+          --endpoint-url "$AWS_ENDPOINT_URL"          
 
       - name: Purge Bunny cache for product
         if: success()

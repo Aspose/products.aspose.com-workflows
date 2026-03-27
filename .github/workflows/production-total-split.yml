@@ -110,13 +110,16 @@ jobs:
 
           find public -iname 'sitemap.xml' -execdir mv -f '{}' "${{ matrix.configure_one_product }}.xml" \;
           
-          files=$(find public -type f -iname '*sitemap*' | sort | head -n 2)
+          echo "===== public/ar/index.xml ====="
+          head -n 20 public/ar/index.xml || echo "File not found"
           
-          for file in $files; do
-            echo "===== $file ====="
-            head -n 20 "$file"
-            echo ""
-          done
+          echo ""
+          echo "===== public/ar/python-net.xml ====="
+          head -n 20 public/ar/python-net.xml || echo "File not found"
+          
+          echo ""
+          echo "===== public/ar/python-net/index.xml ====="
+          head -n 20 public/ar/python-net/index.xml || echo "File not found"
           
           if [ -f total.sitemap ]; then
             mv -f total.sitemap public/total/sitemap.xml

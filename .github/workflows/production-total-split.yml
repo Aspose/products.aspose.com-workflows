@@ -110,7 +110,9 @@ jobs:
 
           find public -iname 'sitemap.xml' -execdir mv -f '{}' "${{ matrix.configure_one_product }}.xml" \;
           
-          find public -type f -iname '*sitemap*' | sort | head -n 2 | while read file; do
+          files=$(find public -type f -iname '*sitemap*' | sort | head -n 2)
+          
+          for file in $files; do
             echo "===== $file ====="
             head -n 20 "$file"
             echo ""

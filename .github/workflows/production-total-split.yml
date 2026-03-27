@@ -109,7 +109,7 @@ jobs:
           mkdir -p public/total
 
           find public -iname 'sitemap.xml' -execdir mv -f '{}' "${{ matrix.configure_one_product }}.xml" \;
-
+          find public -type f -iname '*sitemap*' | sort
           if [ -f total.sitemap ]; then
             mv -f total.sitemap public/total/sitemap.xml
           fi

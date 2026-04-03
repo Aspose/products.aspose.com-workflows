@@ -82,7 +82,7 @@ jobs:
       - name: Build Total (NET only)
         run: |
           hugo --config "configs/totalnet.toml" \
-            -c "content/total" \
+            -c "content/total/en/net" \
             -b "https://products.aspose.com/total/net" \
             --cleanDestinationDir \
             --minify \

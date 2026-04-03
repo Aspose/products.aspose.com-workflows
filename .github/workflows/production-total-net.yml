@@ -81,9 +81,9 @@ jobs:
       # -----------------------------
       - name: Build Total (NET only)
         run: |
-          hugo --config "configs/total.toml" \
+          hugo --config "configs/totalnet.toml" \
             -c "content/total" \
-            -b "https://products.aspose.com/total" \
+            -b "https://products.aspose.com/total/net" \
             --cleanDestinationDir \
             --minify \
             --templateMetrics \
@@ -117,7 +117,7 @@ jobs:
           set -euo pipefail
           echo "Deploying NET to Ceph..."
 
-          aws s3 sync ./public/ s3://products-aspose-com/total/ \
+          aws s3 sync ./public/ s3://products-aspose-com/total/net/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read \
             --exclude ".gitignore" \

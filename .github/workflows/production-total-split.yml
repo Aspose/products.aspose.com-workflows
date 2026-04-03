@@ -104,22 +104,20 @@ jobs:
 
       - name: Prepare public folder
         run: |
-          set -euo pipefail
-
-          mkdir -p public/total
-
-          find public -iname 'sitemap.xml' -execdir mv -f '{}' "${{ matrix.configure_one_product }}.xml" \;
-
-          if [ -f total.sitemap ]; then
-            mv -f total.sitemap public/total/sitemap.xml
+          ROOT="${GITHUB_WORKSPACE}"
+      
+          # Rename sitemap.xml files
+          find "$ROOT/public" -iname 'sitemap.xml' -execdir mv '{}' "${{ matrix.configure_one_product }}.xml" \;
+      
+          # Move total.sitemap safely
+          if [ -f "$ROOT/total.sitemap" ]; then
+            mv "$ROOT/total.sitemap" "$ROOT/public/sitemap.xml"
           fi
-
-          if [ -f total.rss ]; then
-            mv -f total.rss public/total/index.xml
+      
+          # Move total.rss safely
+          if [ -f "$ROOT/total.rss" ]; then
+            mv "$ROOT/total.rss" "$ROOT/public/index.xml"
           fi
-
-          echo "Prepared sitemap files:"
-          find public -maxdepth 3 \( -name 'sitemap.xml' -o -name 'index.xml' -o -name '*.xml' \) | sort
 
       - name: Force S3 path-style addressing for Ceph
         run: |

@@ -95,7 +95,7 @@ jobs:
       # -----------------------------
       - name: Prepare public folder
         run: |
-          find public -iname 'sitemap.xml' -execdir mv '{}' "net.xml" \;
+          find public -iname 'sitemap.xml' -execdir mv -f '{}' "net.xml" \;
           if [ -f total.sitemap ]; then
             mv -f total.sitemap public/sitemap.xml
           fi
@@ -104,20 +104,31 @@ jobs:
           fi
 
       # -----------------------------
+      # Optional debug: inspect output
+      # -----------------------------
+      - name: Inspect public output
+        run: |
+          echo "Public root:"
+          ls -lah public || true
+          echo ""
+          echo "Sample files:"
+          find public -maxdepth 3 -type f | sort | head -n 50 || true
+
+      # -----------------------------
       # S3 config
       # -----------------------------
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path
 
       # -----------------------------
-      # Deploy (SAFE now with --delete)
+      # Deploy
       # -----------------------------
       - name: Sync to Ceph S3 Bucket (NET)
         run: |
           set -euo pipefail
           echo "Deploying NET to Ceph..."
 
-          aws s3 sync ./public/ s3://products-aspose-com/total/en/net/ \
+          aws s3 sync ./public/ s3://products-aspose-com/total/net/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read \
             --exclude ".gitignore" \
@@ -138,19 +149,26 @@ jobs:
             "https://api.dynabic.com/bn/purge?async=true" || true
 
       # -----------------------------
-      # bucket in ceph
+      # Bucket listing
       # -----------------------------
-      - name: bucket in ceph
+      - name: Bucket in Ceph
         run: aws s3 ls s3://products-aspose-com --endpoint-url "$AWS_ENDPOINT_URL"
-        
-      - name: Compare local vs S3
+
+      # -----------------------------
+      # Compare local vs remote NET subtree
+      # -----------------------------
+      - name: Compare local vs S3 NET subtree
         run: |
           echo "LOCAL files:"
-          find public -type f | sort > local.txt
-      
+          cd public
+          find . -type f | sed 's#^\./##' | sort > ../local.txt
+          cd ..
+
           echo "REMOTE files:"
-          aws s3 ls s3://products-aspose-com/ --recursive --endpoint-url "$AWS_ENDPOINT_URL" | awk '{print $4}' | sort > remote.txt
-      
+          aws s3 ls s3://products-aspose-com/total/net/ --recursive --endpoint-url "$AWS_ENDPOINT_URL" \
+            | awk '{print $4}' \
+            | sed 's#^total/net/##' \
+            | sort > remote.txt
+
           echo "Diff:"
-          diff local.txt remote.txt || true        
-            
+          diff local.txt remote.txt || true

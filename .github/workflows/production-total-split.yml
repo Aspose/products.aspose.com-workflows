@@ -130,7 +130,7 @@ jobs:
           echo "Endpoint: $AWS_ENDPOINT_URL"
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          aws s3 sync ./public/ s3://products-aspose-com/total/ \
+          aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --acl public-read \
             --exclude ".gitignore" \
@@ -143,5 +143,5 @@ jobs:
         run: |
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
-            --data-urlencode "url=https://products.aspose.com/total/" \
+            --data-urlencode "url=https://products.aspose.com/" \
             "https://api.dynabic.com/bn/purge?async=true"

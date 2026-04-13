@@ -143,5 +143,5 @@ jobs:
         run: |
           curl -siG \
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
-            --data-urlencode "url=https://products.aspose.com/" \
+            --data-urlencode "url=https://products.aspose.com/*" \
             "https://api.dynabic.com/bn/purge?async=true"

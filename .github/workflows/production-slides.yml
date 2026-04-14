@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main
@@ -25,7 +25,11 @@ jobs:
     - name: Install postcss-cli
       run:  npm install -D --save postcss-cli
     - name: Find and replace url param in frontmatter
-      run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
+      uses: jacobtomlinson/gha-find-replace@v2
+      with:
+        find: "url:"
+        replace: "url_ignore:"
+        include: "_index.md"
     - name: Build Slides
       run: hugo --config "configs/slides.toml" -c "content/slides" -b "https://products.aspose.com/slides" --cleanDestinationDir --minify
     - name: Deploy Slides to S3

@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
@@ -18,6 +18,7 @@ jobs:
     continue-on-error: true
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         configure_one_product:
           #- sharepoint
@@ -70,15 +71,18 @@ jobs:
         run: npm run configure
 
       - name: Display config.json
-        run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
+        run: cat config.json
 
       - name: Build Cells
-        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify --templateMetrics --templateMetricsHints --enableGitInfo
+        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
 
       - name: Prepare public folder
         run: |
-          find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
-          mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.cells.sitemap public/sitemap.xml
+          ROOT="${GITHUB_WORKSPACE}"
+          find "$ROOT/public" -iname 'sitemap.xml' -execdir mv '{}' ${{ matrix.configure_one_product }}.xml \;
+          if [ -f "$ROOT/total.cells.sitemap" ]; then
+            mv "$ROOT/total.cells.sitemap" "$ROOT/public/sitemap.xml"
+          fi
 
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path

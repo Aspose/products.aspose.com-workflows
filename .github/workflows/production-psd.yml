@@ -14,14 +14,27 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       AWS_EC2_METADATA_DISABLED: "true"
       AWS_ENDPOINT_URL: https://s3.dynabic.com
-      
     steps:
-      - name: Checkout theme repo
-        uses: actions/checkout@main
+      - name: Checkout site repo (sparse)
+        uses: actions/checkout@v4
         with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0 
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            configs
+            content/medical
+            layouts
+            themes
+            assets
+            static
+            data
+            i18n
+            package.json
+            package-lock.json
+            postcss.config.js
+          sparse-checkout-cone-mode: false
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
@@ -62,3 +75,11 @@ jobs:
             --page-size 100 \
             --cli-read-timeout 300 \
             --cli-connect-timeout 60
+            
+      - name: Purge BunnyCDN
+        if: success()
+        run: |
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com/psd/*" \
+            "https://api.dynabic.com/bn/purge?async=true" || true

@@ -9,8 +9,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.SMALLIZE_CEPH_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SMALLIZE_CEPH_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
       AWS_EC2_METADATA_DISABLED: "true"
       AWS_ENDPOINT_URL: https://s3.dynabic.com
@@ -69,10 +69,9 @@ jobs:
 
           aws s3 sync ./public/ s3://products-aspose-com/diagram/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
-            --delete \
             --size-only \
             --exclude ".gitignore" \
-            --page-size 100 \
+            --page-size 1000 \
             --cli-read-timeout 300 \
             --cli-connect-timeout 60
 

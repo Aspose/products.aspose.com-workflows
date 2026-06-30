@@ -98,13 +98,27 @@ jobs:
           echo "Deploying imaging/${{ matrix.lang }} to Ceph S3..."
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
-          aws s3 sync ./public/ s3://products-aspose-com/imaging/ \
-            --endpoint-url "$AWS_ENDPOINT_URL" \
-            --size-only \
-            --exclude ".gitignore" \
-            --page-size 1000 \
-            --cli-read-timeout 300 \
-            --cli-connect-timeout 60
+          if [ "${{ matrix.lang }}" = "en" ]; then
+            # English is at the root (defaultContentLanguageInSubdir=false).
+            # Sync all of public/ to capture shared assets (CSS/JS/fonts) + English pages.
+            aws s3 sync ./public/ s3://products-aspose-com/imaging/ \
+              --endpoint-url "$AWS_ENDPOINT_URL" \
+              --size-only \
+              --exclude ".gitignore" \
+              --page-size 1000 \
+              --cli-read-timeout 300 \
+              --cli-connect-timeout 60
+          else
+            # Non-English: only sync the language subfolder to avoid overwriting
+            # the English root index.html with an empty stub from this partial build.
+            aws s3 sync ./public/${{ matrix.lang }}/ s3://products-aspose-com/imaging/${{ matrix.lang }}/ \
+              --endpoint-url "$AWS_ENDPOINT_URL" \
+              --size-only \
+              --exclude ".gitignore" \
+              --page-size 1000 \
+              --cli-read-timeout 300 \
+              --cli-connect-timeout 60
+          fi
 
       - name: Purge BunnyCDN
         if: success()

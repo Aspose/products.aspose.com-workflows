@@ -51,9 +51,9 @@ jobs:
           node-version: 18
 
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
+        uses: peaceiris/actions-hugo@v2.4.13
         with:
-          hugo-version: '0.101.0'
+          hugo-version: '0.110.0'
           extended: true
 
       - name: Install Node.js Dependencies

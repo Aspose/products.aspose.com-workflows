@@ -25,7 +25,7 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             configs
-            content/omr/en
+            content/omr
             layouts
             themes
             assets

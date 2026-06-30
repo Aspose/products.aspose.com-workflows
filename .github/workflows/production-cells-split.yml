@@ -3,7 +3,7 @@ name: Cells-Production-Split
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: [production-complete]
+    types: [production-complete, dispatch-receiver]
 
 jobs:
   deploy:
@@ -15,9 +15,9 @@ jobs:
       AWS_ENDPOINT_URL: https://s3.dynabic.com
       AWS_EC2_METADATA_DISABLED: "true"
 
+    continue-on-error: true
     strategy:
       fail-fast: false
-      max-parallel: 2
       matrix:
         configure_one_product:
           - sharepoint
@@ -37,46 +37,32 @@ jobs:
           - javascript-cpp
 
     steps:
-      - name: Checkout site repo (sparse)
-        uses: actions/checkout@v5
+      - name: Checkout theme repo
+        uses: actions/checkout@main
         with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 1
-          filter: blob:none
-          sparse-checkout: |
-            configs
-            content/cells
-            layouts
-            themes
-            assets
-            static
-            data
-            i18n
-            package.json
-            package-lock.json
-            postcss.config.js
-            config
-            scripts
-          sparse-checkout-cone-mode: false
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v3
         with:
           node-version: 18
-          package-manager-cache: false
 
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
+        uses: peaceiris/actions-hugo@v2.4.13
         with:
-          hugo-version: '0.110.0'
+          hugo-version: '0.101.0'
           extended: true
 
-      - name: Install Node.js dependencies
+      - name: Install Node.js Dependencies
         run: npm install
 
-      - name: Install PostCSS dependencies
-        run: npm install -D autoprefixer postcss postcss-cli
+      - name: Install autoprefixer
+        run: npm install -D --save autoprefixer
+
+      - name: Install postcss-cli
+        run: npm install -D --save postcss-cli
 
       - name: Configure build environment
         env:
@@ -86,38 +72,16 @@ jobs:
       - name: Display config.json
         run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
 
-      - name: Sanity check endpoint value
-        run: |
-          echo "Endpoint: $AWS_ENDPOINT_URL"
-
       - name: Build Cells
-        run: |
-          hugo --config "configs/cells.toml,config.json" \
-            -c "content/cells" \
-            -b "https://products.aspose.com/cells" \
-            --cleanDestinationDir \
-            --minify \
-            --templateMetrics \
-            --templateMetricsHints \
-            --enableGitInfo
+        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify --templateMetrics --templateMetricsHints --enableGitInfo
 
       - name: Prepare public folder
         run: |
-          ROOT="/Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows"
-      
-          find "$ROOT/public" -iname 'sitemap.xml' -execdir mv '{}' ${{ matrix.configure_one_product }}.xml \;
-      
-          if [ -f "$ROOT/total.cells.sitemap" ]; then
-            mv "$ROOT/total.cells.sitemap" "$ROOT/public/sitemap.xml"
-          fi
-      
-          if [ -f "$ROOT/cells.rss" ]; then
-            mv "$ROOT/cells.rss" "$ROOT/public/index.xml"
-          fi
+          find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
+          mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.cells.sitemap public/sitemap.xml
 
       - name: Force S3 path-style addressing for Ceph
-        run: |
-          aws configure set default.s3.addressing_style path
+        run: aws configure set default.s3.addressing_style path
 
       - name: Sync to Ceph S3 Bucket
         run: |
@@ -134,7 +98,7 @@ jobs:
             --cli-read-timeout 300 \
             --cli-connect-timeout 60
 
-      - name: Purge BunnyCDN (optional)
+      - name: Purge BunnyCDN
         if: success()
         run: |
           curl -siG \

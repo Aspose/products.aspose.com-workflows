@@ -28,7 +28,7 @@ jobs:
           #- nodejs-java
           #- nodejs-cpp
           #- go-cpp
-          #- javascript-cpp
+          - javascript-cpp
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
@@ -47,7 +47,8 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             configs
-            content/cells
+            content/cells/*/_index.md
+            content/cells/*/${{ matrix.configure_one_product }}
             layouts
             themes
             assets
@@ -57,8 +58,6 @@ jobs:
             package.json
             package-lock.json
             postcss.config.js
-            config
-            scripts
           sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
@@ -78,13 +77,8 @@ jobs:
       - name: Install PostCSS dependencies
         run: npm install -D autoprefixer postcss postcss-cli
 
-      - name: Configure build environment
-        env:
-          CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
-        run: npm run configure
-
       - name: Build Cells (${{ matrix.configure_one_product }})
-        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
+        run: hugo --config "configs/cells.toml" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
 
       - name: Prepare public folder
         run: |

@@ -38,8 +38,29 @@ jobs:
         include: "_index.md"
     - name: Build Finance
       run: hugo --config "configs/finance.toml" -c "content/finance" -b "https://products.aspose.com/finance" --cleanDestinationDir --minify
-    - name: Deploy Finance to S3
-      run: hugo deploy --config "configs/finance.toml" --maxDeletes=-1 --target "production" --force
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    - name: Force S3 path-style addressing for Ceph
+      run: aws configure set default.s3.addressing_style path
+
+    - name: Sync to Ceph S3 Bucket
+      run: |
+        set -euo pipefail
+        echo "Deploying to Ceph S3 bucket..."
+        echo "Endpoint: $AWS_ENDPOINT_URL"
+        test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
+
+        aws s3 sync ./public/ s3://products-aspose-com/finance/ \
+          --endpoint-url "$AWS_ENDPOINT_URL" \
+          --delete \
+          --size-only \
+          --exclude ".gitignore" \
+          --page-size 100 \
+          --cli-read-timeout 300 \
+          --cli-connect-timeout 60
+
+    - name: Purge BunnyCDN
+      if: success()
+      run: |
+        curl -siG \
+          -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+          --data-urlencode "url=https://products.aspose.com/finance/*" \
+          "https://api.dynabic.com/bn/purge?async=true" || true

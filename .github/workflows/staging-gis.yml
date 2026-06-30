@@ -43,9 +43,9 @@ jobs:
         replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
         include: "_index.md"
     - name: Build GIS
-      run: hugo --config "./config.toml" -c "content/gis" -b "https://products-qa.aspose.com/gis" --cleanDestinationDir --minify
+      run: hugo --config "./config-prod.toml" -c "content/gis" -b "https://products-qa.aspose.com/gis" --cleanDestinationDir --minify
     - name: Deploy GIS to S3
-      run: hugo deploy --config "./config.toml" --maxDeletes=-1 --target "gis" --force
+      run: hugo deploy --config "./config-prod.toml" --maxDeletes=-1 --target "gis" --force
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}

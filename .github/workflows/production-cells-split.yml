@@ -78,7 +78,11 @@ jobs:
         run: npm install -D autoprefixer postcss postcss-cli
 
       - name: Build Cells (${{ matrix.configure_one_product }})
-        run: hugo --config "configs/cells.toml" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
+        run: |
+          while true; do echo "Building..."; sleep 60; done &
+          KEEP_ALIVE=$!
+          hugo --config "configs/cells.toml" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
+          kill $KEEP_ALIVE
 
       - name: Prepare public folder
         run: |

@@ -1,19 +1,56 @@
 name: Slides-Production
 
+# Per-LANGUAGE matrix split. The monolithic whole-site build OOMs on every
+# available runner (ubuntu-latest 16GB killed at ~4min; macos-latest 7GB killed
+# at ~51min; macos-13 retired). Each matrix job builds only one language (+en,
+# the default content language that cannot be disabled), which fits easily in
+# ubuntu-latest. Jobs sync additively to the slides/ prefix (NO --delete, so
+# languages don't clobber each other).
+
 on:
   repository_dispatch:
     types: [production-complete]
   workflow_dispatch:
 
 jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout slides content (sparse)
+        uses: actions/checkout@v4
+        with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            content/slides
+          sparse-checkout-cone-mode: false
+
+      - name: Build language matrix from content/slides/*
+        id: set-matrix
+        run: |
+          langs=$(ls -d content/slides/*/ | xargs -n1 basename)
+          json=$(printf '%s\n' $langs | jq -R . | jq -sc .)
+          echo "matrix={\"language\":$json}" >> $GITHUB_OUTPUT
+
   deploy:
-    runs-on: macos-latest
+    needs: discover
+    runs-on: ubuntu-latest
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
       AWS_EC2_METADATA_DISABLED: "true"
       AWS_ENDPOINT_URL: https://s3.dynabic.com
+
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
 
     steps:
       - name: Checkout site repo (sparse)
@@ -55,24 +92,34 @@ jobs:
         run: npm install -D autoprefixer postcss postcss-cli
 
       - name: Find and replace url param in frontmatter
-        run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
+        run: find . -type f -name '*.md' -exec sed -i 's/url:/url_ignore:/g' {} +
 
-      - name: Build Slides
-        run: hugo --config "configs/slides.toml" -c "content/slides" -b "https://products.aspose.com/slides" --cleanDestinationDir --minify
+      # Build only this language (+en). en is defaultContentLanguage and cannot
+      # be disabled, so it is included in every job; --size-only on sync makes the
+      # repeated en upload a cheap no-op after the first job.
+      - name: Generate config.json (disable all languages except en + ${{ matrix.language }})
+        run: |
+          set -euo pipefail
+          TARGET="${{ matrix.language }}"
+          all=$(ls -d content/slides/*/ | xargs -n1 basename)
+          disable=$(for l in $all; do if [ "$l" != "en" ] && [ "$l" != "$TARGET" ]; then echo "$l"; fi; done | jq -R . | jq -sc .)
+          printf '{"disableLanguages": %s}\n' "$disable" > config.json
+          echo "Building language '$TARGET' (+en). config.json:"; cat config.json
+
+      - name: Build Slides (${{ matrix.language }})
+        run: hugo --config "configs/slides.toml","config.json" -c "content/slides" -b "https://products.aspose.com/slides" --cleanDestinationDir --minify
 
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path
 
-      - name: Sync to Ceph S3 Bucket
+      - name: Sync to Ceph S3 Bucket (additive - no --delete across languages)
         run: |
           set -euo pipefail
-          echo "Deploying to Ceph S3 bucket..."
-          echo "Endpoint: $AWS_ENDPOINT_URL"
+          echo "Deploying language ${{ matrix.language }} to Ceph S3 bucket..."
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
           aws s3 sync ./public/ s3://products-aspose-com/slides/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
-            --delete \
             --size-only \
             --exclude ".gitignore" \
             --page-size 100 \
@@ -86,4 +133,3 @@ jobs:
             -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
             --data-urlencode "url=https://products.aspose.com/slides/*" \
             "https://api.dynabic.com/bn/purge?async=true" || true
-

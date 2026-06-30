@@ -8,47 +8,46 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-      env:
+    env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
       AWS_EC2_METADATA_DISABLED: "true"
       AWS_ENDPOINT_URL: https://s3.dynabic.com
+      
     steps:
-    - name: Checkout theme repo
-      uses: actions/checkout@main
-      with:
+      - name: Checkout theme repo
+        uses: actions/checkout@main
+        with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
           fetch-depth: 0 
-    - name: Setup Hugo
-      uses: peaceiris/actions-hugo@v2
-      with:
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
           hugo-version: '0.110.0'
           extended: true
-          
-          
-    - name: Install autoprefixer
-      run:  npm install -D --save autoprefixer
-    - name: Install postcss-cli
-      run:  npm install -D --save postcss-cli
-    - name: Find and replace url param in frontmatter
-      uses: jacobtomlinson/gha-find-replace@v2
-      with:
-        find: "url:"
-        replace: "url_ignore:"
-        include: "_index.md"
-    - name: Find and replace image url domain
-      uses: jacobtomlinson/gha-find-replace@v2
-      with:
-        find: "logoImageSrc=\"https://www.aspose.cloud/"
-        replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
-        include: "_index.md"
-    - name: Build PSD
-      run: hugo --config "configs/psd.toml" -b "https://products.aspose.com/psd" --cleanDestinationDir --minify
+      - name: Install autoprefixer
+        run: npm install -D --save autoprefixer
+      - name: Install postcss-cli
+        run: npm install -D --save postcss-cli
+      - name: Find and replace url param in frontmatter
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
+          find: "url:"
+          replace: "url_ignore:"
+          include: "_index.md"
+      - name: Find and replace image url domain
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
+          find: "logoImageSrc=\"https://www.aspose.cloud/"
+          replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
+          include: "_index.md"
+      - name: Build PSD
+        run: hugo --config "configs/psd.toml" -b "https://products.aspose.com/psd" --cleanDestinationDir --minify
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path
-     - name: Sync to Ceph S3 Bucket
+      - name: Sync to Ceph S3 Bucket
         run: |
           set -euo pipefail
           echo "Deploying to Ceph S3 bucket..."

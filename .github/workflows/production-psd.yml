@@ -26,7 +26,7 @@ jobs:
           sparse-checkout: |
             configs
             config-prod.toml
-            content/psd/en
+            content/psd
             layouts
             themes
             assets

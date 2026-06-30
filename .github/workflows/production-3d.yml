@@ -26,7 +26,7 @@ jobs:
           sparse-checkout: |
             configs
             config-prod.toml
-            content/3d/en
+            content/3d
             layouts
             themes
             assets

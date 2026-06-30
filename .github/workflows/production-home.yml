@@ -85,7 +85,6 @@ jobs:
           echo "Deploying to Ceph S3 bucket..."
           aws s3 sync ./public/ s3://products-aspose-com/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
-            --delete
 
       - name: Purge BunnyCDN
         if: success()

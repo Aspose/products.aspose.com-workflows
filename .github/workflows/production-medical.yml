@@ -69,7 +69,6 @@ jobs:
 
           aws s3 sync ./public/ s3://products-aspose-com/medical/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
-            --delete \
             --size-only \
             --exclude ".gitignore" \
             --page-size 100 \

@@ -55,7 +55,7 @@ jobs:
         run: npm install -D autoprefixer postcss postcss-cli
 
       - name: Find and replace url param in frontmatter
-        run: find . -type f -name '*.md' -exec sed -i 's/url:/url_ignore:/g' {} +
+        run: find . -type f -name '*.md' -exec sed -i '' 's/url:/url_ignore:/g' {} +
 
       - name: Build Imaging
         run: hugo --config "configs/imaging.toml" -c "content/imaging" -b "https://products.aspose.com/imaging" --cleanDestinationDir --minify

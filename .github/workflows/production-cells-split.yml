@@ -1,19 +1,23 @@
 name: Cells-Production-Split
+
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: [production-complete, dispatch-receiver]
+    types: [production-complete]
 
 jobs:
   deploy:
     runs-on: macos-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-    continue-on-error: true
+      AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: https://s3.dynabic.com
+      AWS_EC2_METADATA_DISABLED: "true"
+
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         configure_one_product:
           - sharepoint
@@ -33,42 +37,107 @@ jobs:
           - javascript-cpp
 
     steps:
-      - name: Checkout theme repo
-        uses: actions/checkout@main
+      - name: Checkout site repo (sparse)
+        uses: actions/checkout@v5
         with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            configs
+            content/cells
+            layouts
+            themes
+            assets
+            static
+            data
+            i18n
+            package.json
+            package-lock.json
+            postcss.config.js
+            config
+            scripts
+          sparse-checkout-cone-mode: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
           node-version: 18
+          package-manager-cache: false
+
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2.4.13
+        uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: 0.101.0
+          hugo-version: '0.110.0'
           extended: true
-      - name: Install Node.js Dependencies
+
+      - name: Install Node.js dependencies
         run: npm install
-      - name: Install autoprefixer
-        run: npm install -D --save autoprefixer
-      - name: Install postcss-cli
-        run: npm install -D --save postcss-cli
+
+      - name: Install PostCSS dependencies
+        run: npm install -D autoprefixer postcss postcss-cli
+
       - name: Configure build environment
         env:
           CONFIGURE_ONE_PRODUCT: ${{ matrix.configure_one_product }}
         run: npm run configure
+
       - name: Display config.json
         run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
+
+      - name: Sanity check endpoint value
+        run: |
+          echo "Endpoint: $AWS_ENDPOINT_URL"
+
       - name: Build Cells
-        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
-          --templateMetrics --templateMetricsHints --enableGitInfo
+        run: |
+          hugo --config "configs/cells.toml,config.json" \
+            -c "content/cells" \
+            -b "https://products.aspose.com/cells" \
+            --cleanDestinationDir \
+            --minify \
+            --templateMetrics \
+            --templateMetricsHints \
+            --enableGitInfo
+
       - name: Prepare public folder
         run: |
-            find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;=
-            mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.cells.sitemap public/sitemap.xml;
-      - name: Deploy Cells to S3
-        run: hugo deploy --config "configs/cells.toml" --maxDeletes=0 --target "production" --force
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+          ROOT="/Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows"
+      
+          find "$ROOT/public" -iname 'sitemap.xml' -execdir mv '{}' ${{ matrix.configure_one_product }}.xml \;
+      
+          if [ -f "$ROOT/total.cells.sitemap" ]; then
+            mv "$ROOT/total.cells.sitemap" "$ROOT/public/sitemap.xml"
+          fi
+      
+          if [ -f "$ROOT/cells.rss" ]; then
+            mv "$ROOT/cells.rss" "$ROOT/public/index.xml"
+          fi
+
+      - name: Force S3 path-style addressing for Ceph
+        run: |
+          aws configure set default.s3.addressing_style path
+
+      - name: Sync to Ceph S3 Bucket
+        run: |
+          set -euo pipefail
+          echo "Deploying to Ceph S3 bucket..."
+          echo "Endpoint: $AWS_ENDPOINT_URL"
+          test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
+
+          aws s3 sync ./public/ s3://products-aspose-com/cells/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --acl public-read \
+            --exclude ".gitignore" \
+            --page-size 100 \
+            --cli-read-timeout 300 \
+            --cli-connect-timeout 60
+
+      - name: Purge BunnyCDN (optional)
+        if: success()
+        run: |
+          curl -siG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com/*" \
+            "https://api.dynabic.com/bn/purge?async=true"

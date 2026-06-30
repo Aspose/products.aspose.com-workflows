@@ -81,7 +81,11 @@ jobs:
         run: |
           while true; do echo "Building..."; sleep 60; done &
           KEEP_ALIVE=$!
-          hugo --config "configs/cells.toml" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
+          hugo --config "configs/cells.toml","config.json" \
+            -c "content/cells" \
+            -b "https://products.aspose.com/cells" \
+            --cleanDestinationDir --minify \
+            --disableLanguages zh,ru,es,pt,fr,ar,it,de,tr,zh-hant,ko,vi,id,ja,pl,nl,fa,hu,hi,th,el,sv,cs
           kill $KEEP_ALIVE
 
       - name: Prepare public folder

@@ -22,32 +22,32 @@ jobs:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
           fetch-depth: 0 
-        - name: Setup Hugo
-          uses: peaceiris/actions-hugo@v2
-          with:
-            hugo-version: '0.110.0'
-            extended: true
-        - name: Install autoprefixer
-          run:  npm install -D --save autoprefixer
-        - name: Install postcss-cli
-          run:  npm install -D --save postcss-cli
-        - name: Find and replace url param in frontmatter
-          uses: jacobtomlinson/gha-find-replace@v2
-          with:
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.110.0'
+          extended: true
+      - name: Install autoprefixer
+        run: npm install -D --save autoprefixer
+      - name: Install postcss-cli
+        run: npm install -D --save postcss-cli
+      - name: Find and replace url param in frontmatter
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
           find: "url:"
           replace: "url_ignore:"
           include: "_index.md"
-        - name: Find and replace image url domain
-          uses: jacobtomlinson/gha-find-replace@v2
-          with:
+      - name: Find and replace image url domain
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
           find: "logoImageSrc=\"https://www.aspose.cloud/"
           replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
           include: "_index.md"
-    - name: Build PSD
-      run: hugo --config "configs/psd.toml" -b "https://products.aspose.com/psd" --cleanDestinationDir --minify
+      - name: Build PSD
+        run: hugo --config "configs/psd.toml" -b "https://products.aspose.com/psd" --cleanDestinationDir --minify
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path
-     - name: Sync to Ceph S3 Bucket
+      - name: Sync to Ceph S3 Bucket
         run: |
           set -euo pipefail
           echo "Deploying to Ceph S3 bucket..."

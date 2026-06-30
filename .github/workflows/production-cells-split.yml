@@ -71,15 +71,17 @@ jobs:
         run: npm run configure
 
       - name: Display config.json
-        run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
+        run: cat config.json
 
       - name: Build Cells
         run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
 
       - name: Prepare public folder
         run: |
-          find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
-          mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.cells.sitemap public/sitemap.xml
+          find ./public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
+          if [ -f total.cells.sitemap ]; then
+            mv total.cells.sitemap public/sitemap.xml
+          fi
 
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path

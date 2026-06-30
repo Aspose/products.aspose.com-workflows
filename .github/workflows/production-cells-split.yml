@@ -18,7 +18,7 @@ jobs:
     continue-on-error: true
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 1
       matrix:
         configure_one_product:
           - sharepoint

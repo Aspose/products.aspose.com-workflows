@@ -25,7 +25,6 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             configs
-            config-prod.toml
             content/pdf/en
             layouts
             themes
@@ -59,7 +58,7 @@ jobs:
         run: find . -type f -name '*.md' -exec sed -i 's/url:/url_ignore:/g' {} +
 
       - name: Build PDF
-        run: hugo --config "./config-prod.toml" -c "content/pdf" -b "https://products.aspose.com/pdf" --cleanDestinationDir --minify
+        run: hugo --config "configs/pdf.toml" -c "content/pdf" -b "https://products.aspose.com/pdf" --cleanDestinationDir --minify
 
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path

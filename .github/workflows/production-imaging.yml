@@ -7,7 +7,36 @@ on:
 
 jobs:
   deploy:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        lang:
+          - en
+          - zh-hans
+          - zh-hant
+          - es
+          - ar
+          - hi
+          - th
+          - sv
+          - cs
+          - uk
+          - he
+          - ru
+          - pt
+          - fr
+          - it
+          - de
+          - tr
+          - ko
+          - vi
+          - id
+          - ja
+          - pl
+          - nl
+          - lt
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.SMALLIZE_CEPH_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SMALLIZE_CEPH_SECRET_ACCESS_KEY }}
@@ -25,7 +54,7 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             configs
-            content/imaging/en
+            content/imaging/${{ matrix.lang }}
             layouts
             themes
             assets
@@ -55,10 +84,10 @@ jobs:
         run: npm install -D autoprefixer postcss postcss-cli
 
       - name: Find and replace url param in frontmatter
-        run: find . -type f -name '*.md' -exec sed -i '' 's/url:/url_ignore:/g' {} +
+        run: find . -type f -name '*.md' -exec sed -i 's/url:/url_ignore:/g' {} +
 
-      - name: Build Imaging
-        run: hugo --config "configs/imaging.toml" -c "content/imaging" -b "https://products.aspose.com/imaging" --cleanDestinationDir --minify
+      - name: Build Imaging (${{ matrix.lang }})
+        run: hugo --config "configs/imaging.toml" -b "https://products.aspose.com/imaging" --cleanDestinationDir --minify
 
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path
@@ -66,8 +95,7 @@ jobs:
       - name: Sync to Ceph S3 Bucket
         run: |
           set -euo pipefail
-          echo "Deploying imaging to Ceph S3 bucket..."
-          echo "Endpoint: $AWS_ENDPOINT_URL"
+          echo "Deploying imaging/${{ matrix.lang }} to Ceph S3..."
           test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
 
           aws s3 sync ./public/ s3://products-aspose-com/imaging/ \

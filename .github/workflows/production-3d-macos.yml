@@ -8,13 +8,19 @@ on:
 jobs:
   deploy:
     runs-on: macos-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_ENDPOINT_URL: https://s3.dynabic.com
     steps:
     - name: Checkout theme repo
       uses: actions/checkout@main
       with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0 
+          fetch-depth: 0
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
@@ -28,8 +34,20 @@ jobs:
       run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
     - name: Build 3D
       run: hugo --config "configs/3d.toml" -c "content/3d" -b "https://products.aspose.com/3d" --cleanDestinationDir --minify
-    - name: Deploy 3D to S3
-      run: hugo deploy --config "configs/3d.toml" --maxDeletes=-1 --target "production" --force
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+    - name: Force S3 path-style addressing for Ceph
+      run: aws configure set default.s3.addressing_style path
+    - name: Sync to Ceph S3 Bucket
+      run: |
+        set -euo pipefail
+        echo "Deploying to Ceph S3 bucket..."
+        echo "Endpoint: $AWS_ENDPOINT_URL"
+        test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
+
+        aws s3 sync ./public/ s3://products-aspose-com/3d/ \
+          --endpoint-url "$AWS_ENDPOINT_URL" \
+          --delete \
+          --size-only \
+          --exclude ".gitignore" \
+          --page-size 100 \
+          --cli-read-timeout 300 \
+          --cli-connect-timeout 60

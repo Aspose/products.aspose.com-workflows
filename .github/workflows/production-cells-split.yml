@@ -18,7 +18,7 @@ jobs:
     continue-on-error: true
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix:
         configure_one_product:
           - sharepoint
@@ -38,12 +38,28 @@ jobs:
           - javascript-cpp
 
     steps:
-      - name: Checkout theme repo
-        uses: actions/checkout@main
+      - name: Checkout site repo (sparse)
+        uses: actions/checkout@v5
         with:
           repository: Aspose/products.aspose.com
           token: ${{ secrets.REPO_TOKEN }}
-          fetch-depth: 0
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            configs
+            content/cells
+            layouts
+            themes
+            assets
+            static
+            data
+            i18n
+            package.json
+            package-lock.json
+            postcss.config.js
+            config
+            scripts
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v3

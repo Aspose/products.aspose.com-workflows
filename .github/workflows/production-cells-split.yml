@@ -18,23 +18,24 @@ jobs:
     continue-on-error: true
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         configure_one_product:
-          #- sharepoint
-          #- python-net
-          #- python-java
-          #- php-java
-          #- family
-          #- jasperreports
-          #- java
+          - sharepoint
+          - python-net
+          - python-java
+          - php-java
+          - family
+          - jasperreports
+          - java
           - net
-          #- cpp
-          #- android-java
-          #- reporting-services
-          #- nodejs-java
-          #- nodejs-cpp
-          #- go-cpp
-          #- javascript-cpp
+          - cpp
+          - android-java
+          - reporting-services
+          - nodejs-java
+          - nodejs-cpp
+          - go-cpp
+          - javascript-cpp
 
     steps:
       - name: Checkout theme repo
@@ -52,7 +53,7 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2.4.13
         with:
-          hugo-version: '0.101.0'
+          hugo-version: '0.110.0'
           extended: true
 
       - name: Install Node.js Dependencies
@@ -73,7 +74,11 @@ jobs:
         run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
 
       - name: Build Cells
-        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify --templateMetrics --templateMetricsHints --enableGitInfo
+        run: |
+          while true; do echo "Building..."; sleep 60; done &
+          KEEP_ALIVE=$!
+          hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify --templateMetrics --templateMetricsHints --enableGitInfo
+          kill $KEEP_ALIVE
 
       - name: Prepare public folder
         run: |

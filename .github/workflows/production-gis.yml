@@ -57,7 +57,7 @@ jobs:
           replace: "logoImageSrc=\"https://cms.admin.containerize.com/"
           include: "_index.md"
       - name: Build GIS
-        run: hugo --config "configs/gis.toml" -b "https://products.aspose.com/gis" --cleanDestinationDir --minify
+        run: hugo --config "./config-prod.toml" -c "content/gis" -b "https://products.aspose.com/gis" --cleanDestinationDir --minify
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path
       - name: Sync to Ceph S3 Bucket

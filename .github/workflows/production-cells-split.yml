@@ -7,18 +7,17 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
-      AWS_ENDPOINT_URL: https://s3.dynabic.com
       AWS_EC2_METADATA_DISABLED: "true"
+      AWS_ENDPOINT_URL: https://s3.dynabic.com
 
     continue-on-error: true
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         configure_one_product:
           #- sharepoint
@@ -53,7 +52,7 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2.4.13
         with:
-          hugo-version: '0.110.0'
+          hugo-version: '0.101.0'
           extended: true
 
       - name: Install Node.js Dependencies
@@ -71,17 +70,15 @@ jobs:
         run: npm run configure
 
       - name: Display config.json
-        run: cat config.json
+        run: cat /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/config.json
 
       - name: Build Cells
-        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
+        run: hugo --config "configs/cells.toml","config.json" -c "content/cells" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify --templateMetrics --templateMetricsHints --enableGitInfo
 
       - name: Prepare public folder
         run: |
-          find ./public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
-          if [ -f total.cells.sitemap ]; then
-            mv total.cells.sitemap public/sitemap.xml
-          fi
+          find /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/public -iname 'sitemap.xml' -execdir mv -i '{}' ${{ matrix.configure_one_product }}.xml \;
+          mv /Users/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/total.cells.sitemap public/sitemap.xml
 
       - name: Force S3 path-style addressing for Ceph
         run: aws configure set default.s3.addressing_style path

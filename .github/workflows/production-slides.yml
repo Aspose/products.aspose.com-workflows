@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-13
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_PROD_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_PROD_SECRET_ACCESS_KEY }}
@@ -55,7 +55,7 @@ jobs:
         run: npm install -D autoprefixer postcss postcss-cli
 
       - name: Find and replace url param in frontmatter
-        run: find . -type f -name '*.md' -exec sed -i 's/url:/url_ignore:/g' {} +
+        run: LC_ALL=C find . -type f -name '*.md' -exec sed -i '' s/url:/url_ignore:/g {} +
 
       - name: Build Slides
         run: hugo --config "configs/slides.toml" -c "content/slides" -b "https://products.aspose.com/slides" --cleanDestinationDir --minify

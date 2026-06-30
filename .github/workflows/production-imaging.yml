@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: macos-13
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.SMALLIZE_CEPH_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SMALLIZE_CEPH_SECRET_ACCESS_KEY }}

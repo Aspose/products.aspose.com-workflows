@@ -61,6 +61,7 @@ jobs:
           sparse-checkout: |
             configs
             content/cells/*/_index.md
+            content/cells/*/_index.*.md
             content/cells/*/${{ matrix.platform }}
             layouts
             themes

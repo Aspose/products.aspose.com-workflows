@@ -1,0 +1,128 @@
+name: Cells-Ceph
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [production-complete]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - net
+          - java
+          - python-net
+          - python-java
+          - php-java
+          - cpp
+          - android-java
+          - nodejs-java
+          - nodejs-cpp
+          - go-cpp
+          - javascript-cpp
+          - sharepoint
+          - jasperreports
+          - reporting-services
+          - family
+          - conversion
+          - annotation
+          - assembly
+          - chart
+          - comparison
+          - editor
+          - merger
+          - metadata
+          - parser
+          - protect
+          - redaction
+          - search
+          - splitter
+          - unlock
+          - watermark
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.SMALLIZE_CEPH_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SMALLIZE_CEPH_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_ENDPOINT_URL: https://s3.dynabic.com
+
+    steps:
+      - name: Checkout site repo (sparse)
+        uses: actions/checkout@v4
+        with:
+          repository: Aspose/products.aspose.com
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            configs
+            content/cells/*/_index.md
+            content/cells/*/${{ matrix.platform }}
+            layouts
+            themes
+            assets
+            static
+            data
+            i18n
+            package.json
+            package-lock.json
+            postcss.config.js
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.101.0'
+          extended: true
+
+      - name: Install Node.js dependencies
+        run: npm install
+
+      - name: Install PostCSS dependencies
+        run: npm install -D autoprefixer postcss postcss-cli
+
+      - name: Find and replace url param in frontmatter
+        run: find . -type f -name '*.md' -exec sed -i 's/url:/url_ignore:/g' {} +
+
+      - name: Build Cells (${{ matrix.platform }})
+        run: hugo --config "configs/cells.toml" -b "https://products.aspose.com/cells" --cleanDestinationDir --minify
+
+      - name: Force S3 path-style addressing for Ceph
+        run: aws configure set default.s3.addressing_style path
+
+      - name: Sync to Ceph S3 Bucket
+        run: |
+          set -euo pipefail
+          echo "Deploying cells/${{ matrix.platform }} (all languages) to Ceph S3..."
+          test -n "${AWS_ENDPOINT_URL:-}" || (echo "AWS_ENDPOINT_URL is empty" && exit 1)
+
+          aws s3 sync ./public/ s3://products-aspose-com/cells/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --size-only \
+            --exclude ".gitignore" \
+            --page-size 1000 \
+            --cli-read-timeout 300 \
+            --cli-connect-timeout 60
+
+      - name: Purge BunnyCDN
+        id: cdn_purge
+        if: success()
+        continue-on-error: true
+        run: |
+          curl -iG \
+            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+            --data-urlencode "url=https://products.aspose.com/cells/*" \
+            "https://api.dynabic.com/bn/purge?async=true"
+
+      - name: Warn on CDN purge failure
+        if: steps.cdn_purge.outcome == 'failure'
+        run: echo "::warning title=CDN purge failed::products.aspose.com/cells CDN cache purge failed — stale content may be served until TTL expires."

@@ -32,7 +32,11 @@ jobs:
       - name: Build language matrix from content/slides/*
         id: set-matrix
         run: |
-          langs=$(ls -d content/slides/*/ | xargs -n1 basename)
+          # en is defaultContentLanguage and is rebuilt by every job, so it needs
+          # no job of its own. An en-only job leaves exactly one language enabled,
+          # and Hugo then writes en's URL set to public/sitemap.xml instead of a
+          # sitemap index - the same S3 key every other job writes its index to.
+          langs=$(ls -d content/slides/*/ | xargs -n1 basename | grep -vx en)
           json=$(printf '%s\n' $langs | jq -R . | jq -sc .)
           echo "matrix={\"language\":$json}" >> $GITHUB_OUTPUT
 
@@ -103,7 +107,10 @@ jobs:
           TARGET="${{ matrix.language }}"
           all=$(ls -d content/slides/*/ | xargs -n1 basename)
           disable=$(for l in $all; do if [ "$l" != "en" ] && [ "$l" != "$TARGET" ]; then echo "$l"; fi; done | jq -R . | jq -sc .)
-          printf '{"disableLanguages": %s}\n' "$disable" > config.json
+          # Every locale, including the ones this job disables. The sitemap index
+          # is built from this param, so it lists all locales, not this job's two.
+          every=$(printf '%s\n' $all | jq -R . | jq -sc .)
+          printf '{"disableLanguages": %s, "params": {"sitemapLanguages": %s}}\n' "$disable" "$every" > config.json
           echo "Building language '$TARGET' (+en). config.json:"; cat config.json
 
       - name: Build Slides (${{ matrix.language }})

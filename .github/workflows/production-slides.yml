@@ -133,10 +133,102 @@ jobs:
             --cli-read-timeout 300 \
             --cli-connect-timeout 60
 
-      - name: Purge BunnyCDN
-        if: success()
+  purge:
+    name: Purge BunnyCDN (/slides/*) and verify it took effect
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Purge with async=false, then verify by canary
+        env:
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          PURGE_TARGET: "https://products.aspose.com/slides/*"
         run: |
-          curl -siG \
-            -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
-            --data-urlencode "url=https://products.aspose.com/slides/*" \
-            "https://api.dynabic.com/bn/purge?async=true" || true
+          set +e -u -o pipefail
+
+          if [ -z "${BUNNY_API_KEY:-}" ]; then
+            echo "::error title=CDN purge skipped::BUNNY_API_KEY is not set. /slides/ keeps serving cached pages for up to 30 days."
+            exit 1
+          fi
+
+          # Canaries at several depths and in more than one language. A wildcard
+          # purge has been observed to evict only the shallowest path while deeper
+          # pages kept serving the previous HTML -- a single root canary is exactly
+          # the probe a partial purge passes.
+          CANARIES="
+          https://products.aspose.com/slides/
+          https://products.aspose.com/slides/net/
+          https://products.aspose.com/slides/java/
+          https://products.aspose.com/slides/python-net/
+          https://products.aspose.com/slides/net/conversion/ppt-to-pdf/
+          https://products.aspose.com/slides/ru/net/
+          "
+
+          STATE_DIR="$(mktemp -d)"
+          key() { printf '%s' "$1" | tr -c 'a-zA-Z0-9' '_'; }
+          cdn_state() {
+            curl -sS -o /dev/null -D - --max-time 30 \
+                 -A 'slides-production/purge-canary' "$1" 2>/dev/null \
+              | tr -d '\r' | awk 'tolower($1)=="cdn-cache:"{s=$2} END{print s}'
+          }
+
+          # Warm first. A canary that is MISS before the purge is unobservable, and
+          # a check with nothing to observe proves nothing while looking like a pass.
+          for u in $CANARIES; do cdn_state "$u" >/dev/null; done
+          sleep 3
+          for u in $CANARIES; do
+            s="$(cdn_state "$u")"
+            printf '%s' "$s" > "$STATE_DIR/$(key "$u")"
+            echo "before=$s  $u"
+          done
+
+          # async=false is the only mode ever observed to evict anything; async=true
+          # answers HTTP 200 with the cache untouched. Retry on 5xx and on transport
+          # failures -- this gateway degrades under load and has returned 504.
+          code=""
+          for attempt in 1 2 3; do
+            code="$(curl -sS -G -o /tmp/purge.out -w '%{http_code}' --max-time 120 \
+                      -H "X-Api-Key: $BUNNY_API_KEY" \
+                      --data-urlencode "url=${PURGE_TARGET}" \
+                      "https://api.dynabic.com/bn/purge?async=false")" || code="000"
+            echo "purge attempt ${attempt}: HTTP ${code}"
+            case "$code" in
+              2*)      break ;;
+              5*|000)  sleep $((5 * attempt)) ;;
+              *)       break ;;
+            esac
+          done
+          echo "gateway body: $(head -c 300 /tmp/purge.out 2>/dev/null)"
+
+          case "$code" in
+            2*) : ;;
+            *)  echo "::error title=CDN purge failed::gateway returned HTTP ${code} for ${PURGE_TARGET} after 3 attempts. Nothing was evicted."
+                exit 1 ;;
+          esac
+
+          sleep 8
+
+          observable=0
+          survivors=""
+          for u in $CANARIES; do
+            b="$(cat "$STATE_DIR/$(key "$u")")"
+            a="$(cdn_state "$u")"
+            echo "canary ${u}: ${b} -> ${a}"
+            if [ "$b" = "HIT" ]; then
+              observable=$((observable + 1))
+              if [ "$a" = "HIT" ]; then survivors="${survivors} ${u}"; fi
+            fi
+          done
+
+          if [ "$observable" -eq 0 ]; then
+            echo "::error title=CDN purge UNVERIFIED::no canary was cached before the purge, so nothing was observed. HTTP ${code} from this gateway is not evidence of eviction."
+            exit 1
+          fi
+
+          if [ -n "$survivors" ]; then
+            echo "::error title=CDN purge did NOT take effect::gateway returned HTTP ${code}, $((observable - $(echo $survivors | wc -w))) of ${observable} cached canaries were evicted, but these are still served from cache:${survivors}. Users keep seeing the previous page; do not date this change from this run."
+            exit 1
+          fi
+
+          echo "CDN purge verified: all ${observable} cached canaries went HIT -> MISS (gateway HTTP ${code})."

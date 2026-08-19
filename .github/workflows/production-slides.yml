@@ -50,7 +50,6 @@ jobs:
       AWS_EC2_METADATA_DISABLED: "true"
       AWS_ENDPOINT_URL: https://s3.dynabic.com
 
-    continue-on-error: true
     strategy:
       fail-fast: false
       max-parallel: 8
@@ -128,107 +127,179 @@ jobs:
           aws s3 sync ./public/ s3://products-aspose-com/slides/ \
             --endpoint-url "$AWS_ENDPOINT_URL" \
             --size-only \
+            --no-progress \
             --exclude ".gitignore" \
             --page-size 100 \
             --cli-read-timeout 300 \
-            --cli-connect-timeout 60
+            --cli-connect-timeout 60 \
+            | tee /tmp/sync.log
+
+      - name: Record what actually uploaded
+        if: always()
+        run: |
+          set -uo pipefail
+          mkdir -p changed
+          out="changed/changed-${{ matrix.language }}.tsv"
+          : > "$out"
+          grep -E '^upload: ' /tmp/sync.log | sed 's/^upload: //' \
+          | while read -r src _to dst; do
+              key="${dst#s3://products-aspose-com/}"
+              bytes="$(stat -c%s "$src")"
+              case "$key" in
+                */index.html)
+                  # Two cache keys, not one: /slides/net/ and /slides/net/index.html
+                  # are separate objects at the edge and a purge of one does not
+                  # evict the other.
+                  printf '%s\t%s\n' "https://products.aspose.com/${key%index.html}" "$bytes" >> "$out"
+                  printf '%s\t%s\n' "https://products.aspose.com/$key"              "$bytes" >> "$out"
+                  ;;
+                *)
+                  printf '%s\t%s\n' "https://products.aspose.com/$key" "$bytes" >> "$out"
+                  ;;
+              esac
+            done
+          echo "objects uploaded: $(grep -cE '^upload: ' /tmp/sync.log)"
+          echo "purge URLs:       $(wc -l < "$out")"
+
+      - name: Upload the changed-set manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-${{ matrix.language }}
+          path: changed/
+          if-no-files-found: warn
 
   purge:
-    name: Purge BunnyCDN (/slides/*) and verify it took effect
+    name: Purge the changed URLs and verify the edge serves the new bytes
     needs: deploy
     if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
-      - name: Purge with async=false, then verify by canary
+      - name: Collect every job's changed set
+        uses: actions/download-artifact@v4
+        with:
+          path: changed
+          pattern: changed-*
+          merge-multiple: true
+
+      - name: Purge per URL, then verify by byte length
         env:
           BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
-          PURGE_TARGET: "https://products.aspose.com/slides/*"
+          MAX_PER_URL: "500"
+          SAMPLE_SIZE: "50"
+          SAMPLE_PASS_PCT: "95"
         run: |
-          set +e -u -o pipefail
+          set -uo pipefail
 
           if [ -z "${BUNNY_API_KEY:-}" ]; then
             echo "::error title=CDN purge skipped::BUNNY_API_KEY is not set. /slides/ keeps serving cached pages for up to 30 days."
             exit 1
           fi
 
-          # Canaries at several depths and in more than one language. A wildcard
-          # purge has been observed to evict only the shallowest path while deeper
-          # pages kept serving the previous HTML -- a single root canary is exactly
-          # the probe a partial purge passes.
-          CANARIES="
-          https://products.aspose.com/slides/
-          https://products.aspose.com/slides/net/
-          https://products.aspose.com/slides/java/
-          https://products.aspose.com/slides/python-net/
-          https://products.aspose.com/slides/net/conversion/ppt-to-pdf/
-          https://products.aspose.com/slides/ru/net/
-          "
+          cat changed/*.tsv 2>/dev/null | sort -u > all.tsv || true
+          n=$(wc -l < all.tsv)
+          echo "changed URLs across all languages: $n"
 
-          STATE_DIR="$(mktemp -d)"
-          key() { printf '%s' "$1" | tr -c 'a-zA-Z0-9' '_'; }
-          cdn_state() {
-            curl -sS -o /dev/null -D - --max-time 30 \
-                 -A 'slides-production/purge-canary' "$1" 2>/dev/null \
-              | tr -d '\r' | awk 'tolower($1)=="cdn-cache:"{s=$2} END{print s}'
+          # An empty changed set is a failure, not a no-op. aws s3 sync --size-only
+          # uploads nothing when a fix is byte-length-identical, and that is the
+          # single most expensive silent failure in this pipeline.
+          if [ "$n" -eq 0 ]; then
+            echo "::error title=Nothing was uploaded::aws s3 sync --size-only moved 0 objects, so no change can have reached a reader. Force a byte-length delta and redeploy."
+            exit 1
+          fi
+
+          edge() {  # url -> "code<TAB>bytes<TAB>cdn-cache<TAB>pop"
+            curl -sS -o /dev/null -D - --max-time 30 -H 'Accept-Encoding: identity' \
+                 -A 'slides-production/purge-canary' "$1" 2>/dev/null | tr -d '\r' \
+            | awk 'BEGIN{c="000";l="";s="";p=""}
+                   /^HTTP\//{c=$2}
+                   tolower($1)=="content-length:"{l=$2}
+                   tolower($1)=="cdn-cache:"{s=$2}
+                   tolower($1)=="server:"{p=$2}
+                   END{printf "%s\t%s\t%s\t%s", c, l, s, p}'
           }
 
-          # Warm first. A canary that is MISS before the purge is unobservable, and
-          # a check with nothing to observe proves nothing while looking like a pass.
-          for u in $CANARIES; do cdn_state "$u" >/dev/null; done
-          sleep 3
-          for u in $CANARIES; do
-            s="$(cdn_state "$u")"
-            printf '%s' "$s" > "$STATE_DIR/$(key "$u")"
-            echo "before=$s  $u"
-          done
+          purge_one() {
+            for attempt in 1 2 3; do
+              code="$(curl -sS -G -o /dev/null -w '%{http_code}' --max-time 120 \
+                        -H "X-Api-Key: $BUNNY_API_KEY" --data-urlencode "url=$1" \
+                        'https://api.dynabic.com/bn/purge?async=false')" || code="000"
+              case "$code" in
+                2*)     echo "$code"; return 0 ;;
+                5*|000) sleep $((5 * attempt)) ;;
+                *)      echo "$code"; return 1 ;;
+              esac
+            done
+            echo "$code"; return 1
+          }
 
-          # async=false is the only mode ever observed to evict anything; async=true
-          # answers HTTP 200 with the cache untouched. Retry on 5xx and on transport
-          # failures -- this gateway degrades under load and has returned 504.
-          code=""
-          for attempt in 1 2 3; do
-            code="$(curl -sS -G -o /tmp/purge.out -w '%{http_code}' --max-time 120 \
-                      -H "X-Api-Key: $BUNNY_API_KEY" \
-                      --data-urlencode "url=${PURGE_TARGET}" \
-                      "https://api.dynabic.com/bn/purge?async=false")" || code="000"
-            echo "purge attempt ${attempt}: HTTP ${code}"
-            case "$code" in
-              2*)      break ;;
-              5*|000)  sleep $((5 * attempt)) ;;
-              *)       break ;;
-            esac
-          done
-          echo "gateway body: $(head -c 300 /tmp/purge.out 2>/dev/null)"
+          # Canaries are drawn from what changed, one per class, so a class that
+          # this deploy touched cannot go unobserved. Classes absent from the
+          # changed set are absent from the canary list -- never substituted.
+          html=$(cut -f1 all.tsv | grep -E '/$' || true)
+          canaries="$( { echo "$html" | awk '{print gsub("/","/"), $0}' | sort -n  | head -1 | cut -d' ' -f2-
+                         echo "$html" | awk '{print gsub("/","/"), $0}' | sort -rn | head -1 | cut -d' ' -f2-
+                         echo "$html" | grep -E '^https://products\.aspose\.com/slides/[a-z]{2}(-[a-z]+)?/' | head -1
+                         cut -f1 all.tsv | grep -E '/index\.md$'        | head -1
+                         cut -f1 all.tsv | grep -E '/llms\.txt$'        | head -1
+                         cut -f1 all.tsv | grep -E '/slides/(css|js)/'  | head -1
+                         cut -f1 all.tsv | grep -E '/sitemap\.xml$'     | head -1
+                       } | sed '/^$/d' | sort -u )"
+          echo "canaries:"; echo "$canaries" | sed 's/^/  /'
 
-          case "$code" in
-            2*) : ;;
-            *)  echo "::error title=CDN purge failed::gateway returned HTTP ${code} for ${PURGE_TARGET} after 3 attempts. Nothing was evicted."
-                exit 1 ;;
-          esac
+          echo "--- before"
+          for u in $canaries; do echo "  $(edge "$u")  $u"; done
+
+          if [ "$n" -le "$MAX_PER_URL" ]; then
+            targets="$(cut -f1 all.tsv)"
+            mode="per-URL over the whole changed set"
+          else
+            targets="$(printf '%s\n' "$canaries"; cut -f1 all.tsv | shuf -n "$SAMPLE_SIZE")"
+            mode="per-URL over canaries + ${SAMPLE_SIZE} sampled, plus one wildcard"
+            purge_one 'https://products.aspose.com/slides/*' >/dev/null || true
+          fi
+          echo "purge mode: $mode"
+
+          fail=0
+          for u in $targets; do
+            code="$(purge_one "$u")" || { echo "::warning::purge gateway returned $code for $u"; fail=$((fail+1)); }
+          done
+          echo "purge calls with a non-2xx answer: $fail"
 
           sleep 8
 
-          observable=0
-          survivors=""
-          for u in $CANARIES; do
-            b="$(cat "$STATE_DIR/$(key "$u")")"
-            a="$(cdn_state "$u")"
-            echo "canary ${u}: ${b} -> ${a}"
-            if [ "$b" = "HIT" ]; then
-              observable=$((observable + 1))
-              if [ "$a" = "HIT" ]; then survivors="${survivors} ${u}"; fi
+          echo "--- after"
+          bad=""; checked=0; ok=0
+          for u in $(printf '%s\n' $canaries $targets | sort -u); do
+            want="$(awk -F'\t' -v u="$u" '$1==u{print $2; exit}' all.tsv)"
+            [ -n "$want" ] || continue
+            got="$(edge "$u")"
+            code=$(printf '%s' "$got" | cut -f1); len=$(printf '%s' "$got" | cut -f2)
+            checked=$((checked+1))
+            if [ "$code" = "200" ] && [ "$len" = "$want" ]; then
+              ok=$((ok+1))
+            else
+              bad="$bad $u(want=$want got=$code/$len)"
             fi
           done
+          echo "verified $ok of $checked; edge PoP: $(edge 'https://products.aspose.com/slides/' | cut -f4)"
 
-          if [ "$observable" -eq 0 ]; then
-            echo "::error title=CDN purge UNVERIFIED::no canary was cached before the purge, so nothing was observed. HTTP ${code} from this gateway is not evidence of eviction."
+          # Every canary must be correct. The sample only has to clear a rate,
+          # because a partial CDN purge is the observed failure, not a theory:
+          # a previous wave measured 4.0% of a 300-response sample carrying the fix.
+          for u in $canaries; do
+            case " $bad " in *" $u("*)
+              echo "::error title=CDN purge did NOT take effect::${u} is not serving the bytes this deploy produced. Do not date this change from this run."
+              exit 1 ;;
+            esac
+          done
+
+          pct=$(( 100 * ok / checked ))
+          if [ "$pct" -lt "$SAMPLE_PASS_PCT" ]; then
+            echo "::error title=CDN purge only partly took effect::${ok} of ${checked} URLs serve the new bytes (${pct}%, floor ${SAMPLE_PASS_PCT}%). Stale:${bad}"
             exit 1
           fi
 
-          if [ -n "$survivors" ]; then
-            echo "::error title=CDN purge did NOT take effect::gateway returned HTTP ${code}, $((observable - $(echo $survivors | wc -w))) of ${observable} cached canaries were evicted, but these are still served from cache:${survivors}. Users keep seeing the previous page; do not date this change from this run."
-            exit 1
-          fi
-
-          echo "CDN purge verified: all ${observable} cached canaries went HIT -> MISS (gateway HTTP ${code})."
+          echo "Edge verified: ${ok} of ${checked} URLs serve the byte length this build produced."
+          echo "NOTE: observed from one point of presence only. This is not a statement about the global edge."

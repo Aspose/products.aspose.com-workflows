@@ -284,11 +284,20 @@ jobs:
 
           # Always per URL, over the whole changed set. There is no cheaper mechanism that works.
           : > /tmp/purge_fail.txt
-          cut -f1 all.tsv | xargs -r -P "$PURGE_PARALLEL" -n 1 /tmp/purge_one.sh
+          # `|| true` is load-bearing: xargs exits 123 when ANY child exits non-zero, and under
+          # `bash -e` that kills the step before the failure count below is ever read -- which is the
+          # whole point of collecting failures in a file rather than letting one abort the run.
+          # Measured: a deploy with 3,024 changed URLs died on exit 123 having purged most of them
+          # and verified none of them.
+          cut -f1 all.tsv | xargs -r -P "$PURGE_PARALLEL" -n 1 /tmp/purge_one.sh || true
           fail=$(wc -l < /tmp/purge_fail.txt)
           echo "purge mode: per-URL over the whole changed set, ${PURGE_PARALLEL} at a time"
           echo "purge calls that never returned 2xx: $fail"
           [ "$fail" -gt 0 ] && head -20 /tmp/purge_fail.txt | sed 's/^/  /'
+          if [ "$fail" -ge "$n" ]; then
+            echo "::error title=Every purge call failed::${fail} of ${n} calls never returned 2xx. The gateway or the key is the problem, not the cache."
+            exit 1
+          fi
 
           # Eviction is eventually consistent. Measured: 6 s after a successful purge the old object
           # was still being served, 15 s after it was not. The previous 8 s sat inside that window and
@@ -319,7 +328,7 @@ jobs:
           # than failing on the first read.
           if [ -n "$bad" ]; then
             echo "--- re-purging $(printf '%s\n' $bad | wc -w) URLs that were still stale"
-            printf '%s\n' $bad | xargs -r -P "$PURGE_PARALLEL" -n 1 /tmp/purge_one.sh
+            printf '%s\n' $bad | xargs -r -P "$PURGE_PARALLEL" -n 1 /tmp/purge_one.sh || true
             sleep "$SETTLE_SECONDS"
             verify "$watch"
             echo "after the second pass: verified $ok of $checked"

@@ -134,6 +134,38 @@ jobs:
             --cli-connect-timeout 60 \
             | tee /tmp/sync.log
 
+      # A second pass for sitemaps only, deliberately WITHOUT --size-only.
+      #
+      # The sync above compares byte length alone, and a sitemap whose only change is
+      # its <lastmod> dates is the same length as the one already in the bucket. So the
+      # sitemaps were never re-uploaded and their dates froze: the index was still
+      # advertising a date from a month earlier while the pages it lists had been
+      # rebuilt many times. The purge job's canary picker has always contained a
+      # sitemap rule and has never had a sitemap to select, for the same reason.
+      #
+      # Default sync semantics compare size AND modification time, so a rebuilt file
+      # wins on time even when the length is identical. That is exactly the comparison
+      # this needs and it is why --size-only is omitted here rather than reproduced.
+      #
+      # Scoped to the index and this job's own language. Every job also builds en, so
+      # en's sitemap is included and will be written once per job with identical bytes
+      # -- last writer wins, content the same. That redundancy is accepted knowingly:
+      # en has no matrix job of its own, so it has no other single owner, and leaving
+      # it out would freeze the dates on the largest locale to fix the other 23.
+      - name: Force the sitemaps to upload (their length does not change when their dates do)
+        run: |
+          set -euo pipefail
+          aws s3 sync ./public/ s3://products-aspose-com/slides/ \
+            --endpoint-url "$AWS_ENDPOINT_URL" \
+            --no-progress \
+            --exclude "*" \
+            --include "sitemap.xml" \
+            --include "en/sitemap.xml" \
+            --include "${{ matrix.language }}/sitemap.xml" \
+            --cli-read-timeout 300 \
+            --cli-connect-timeout 60 \
+            | tee -a /tmp/sync.log
+
       - name: Record what actually uploaded
         if: always()
         run: |

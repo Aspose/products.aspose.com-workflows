@@ -11,9 +11,15 @@ on:
   repository_dispatch:
     types: [production-complete]
   workflow_dispatch:
+    inputs:
+      purge_run_id:
+        description: "Purge only: the run ID whose uploaded URLs to purge again. Skips build and upload."
+        required: false
+        default: ""
 
 jobs:
   discover:
+    if: ${{ !inputs.purge_run_id }}
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -209,29 +215,40 @@ jobs:
           path: changed/
           if-no-files-found: warn
 
-  purge:
-    name: Purge the changed URLs and verify the edge serves the new bytes
+  plan:
+    name: Collect the changed URLs and split them into purge shards
     needs: deploy
     if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 330
+    permissions:
+      actions: read
+    outputs:
+      shards: ${{ steps.split.outputs.shards }}
     steps:
       - name: Collect every job's changed set
+        if: ${{ !inputs.purge_run_id }}
         uses: actions/download-artifact@v4
         with:
           path: changed
           pattern: changed-*
           merge-multiple: true
 
-      - name: Purge per URL, then verify by byte length
-        timeout-minutes: 330
+      - name: Collect the changed set of run ${{ inputs.purge_run_id }}
+        if: ${{ inputs.purge_run_id }}
+        uses: actions/download-artifact@v4
+        with:
+          path: changed
+          pattern: changed-*
+          merge-multiple: true
+          run-id: ${{ inputs.purge_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Split the changed set and read the canaries before the purge
+        id: split
         env:
           BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
-          PURGE_PARALLEL: "24"
-          SAMPLE_SIZE: "50"
-          SAMPLE_PASS_PCT: "95"
-          SETTLE_SECONDS: "25"
-          HARD_CAP: "200000"
+          PURGE_RUN_ID: ${{ inputs.purge_run_id }}
+          SHARD_SIZE: "10000"
         run: |
           set -uo pipefail
 
@@ -240,8 +257,10 @@ jobs:
             exit 1
           fi
 
-          cat changed/*.tsv 2>/dev/null | sort -u > all.tsv || true
-          n=$(wc -l < all.tsv)
+          mkdir -p plan/shards
+          cat changed/*.tsv 2>/dev/null | sort -u > plan/all.tsv || true
+          [ -n "$PURGE_RUN_ID" ] && echo "purge only: URLs uploaded by run $PURGE_RUN_ID"
+          n=$(wc -l < plan/all.tsv)
           echo "changed URLs across all languages: $n"
 
           # An empty changed set is a failure HERE, where every language is visible at once: it means
@@ -249,25 +268,30 @@ jobs:
           # reader. A single language having nothing to upload is normal and is not an error -- that
           # check does not belong in the per-language job.
           if [ "$n" -eq 0 ]; then
-            echo "::error title=Nothing was uploaded::aws s3 sync --size-only moved 0 objects, so no change can have reached a reader. Force a byte-length delta and redeploy."
+            if [ -n "$PURGE_RUN_ID" ]; then
+              echo "::error title=Nothing to purge::Run ${PURGE_RUN_ID} has no changed-* URLs."
+            else
+              echo "::error title=Nothing was uploaded::aws s3 sync --size-only moved 0 objects, so no change can have reached a reader. Force a byte-length delta and redeploy."
+            fi
             exit 1
           fi
 
-          if [ "$n" -gt "$HARD_CAP" ]; then
-            echo "::error title=Changed set above the purge cap::${n} URLs exceeds HARD_CAP=${HARD_CAP}. Purging per URL would exceed this job's budget, and the wildcard form does not evict. Split the deploy or raise the cap deliberately."
-            exit 1
-          fi
+          cut -f1 plan/all.tsv | split -d -a 3 -l "$SHARD_SIZE" --additional-suffix=.txt - plan/shards/
+          shards=$(ls plan/shards | sed 's/\.txt$//' | jq -R . | jq -sc .)
+          echo "shards=$shards" >> "$GITHUB_OUTPUT"
+          echo "shards: $(ls plan/shards | wc -l) of up to $SHARD_SIZE URLs"
 
-          edge() {  # url -> "code<TAB>bytes<TAB>cdn-cache<TAB>pop"
-            curl -sS -o /dev/null -D - --max-time 30 -H 'Accept-Encoding: identity' \
-                 -A 'slides-production/purge-canary' "$1" 2>/dev/null | tr -d '\r' \
-            | awk 'BEGIN{c="000";l="";s="";p=""}
-                   /^HTTP\//{c=$2}
-                   tolower($1)=="content-length:"{l=$2}
-                   tolower($1)=="cdn-cache:"{s=$2}
-                   tolower($1)=="server:"{p=$2}
-                   END{printf "%s\t%s\t%s\t%s", c, l, s, p}'
-          }
+          cat > plan/edge.sh <<'EDGE'
+          #!/usr/bin/env bash
+          curl -sS -o /dev/null -D - --max-time 30 -H 'Accept-Encoding: identity' \
+               -A 'slides-production/purge-canary' "$1" 2>/dev/null | tr -d '\r' \
+          | awk 'BEGIN{c="000";l="";s="";p=""}
+                 /^HTTP\//{c=$2}
+                 tolower($1)=="content-length:"{l=$2}
+                 tolower($1)=="cdn-cache:"{s=$2}
+                 tolower($1)=="server:"{p=$2}
+                 END{printf "%s\t%s\t%s\t%s", c, l, s, p}'
+          EDGE
 
           # Purge one exact URL. The wildcard form is NOT used anywhere in this job: measured against
           # the live zone on 2026-08-21 with a valid key, `/slides/*`, `/slides/net/*` and
@@ -275,7 +299,7 @@ jobs:
           # exact-URL purge of the same object evicted it. A wildcard call is indistinguishable from a
           # successful one and evicts nothing, so relying on it left ~134k URLs stale while this job
           # reported success.
-          cat > /tmp/purge_one.sh <<'PURGE'
+          cat > plan/purge_one.sh <<'PURGE'
           #!/usr/bin/env bash
           u="$1"
           for attempt in 1 2 3 4 5; do
@@ -283,7 +307,7 @@ jobs:
                       -H "X-Api-Key: $BUNNY_API_KEY" --data-urlencode "url=$u" \
                       'https://api.dynabic.com/bn/purge?async=false')" || code="000"
             case "$code" in
-              2*)     exit 0 ;;
+              2*)     echo "$u" >> "${PURGED_LOG:-/dev/null}"; exit 0 ;;
               429|5*|000) sleep $(( attempt * attempt * 2 )) ;;
               *)      echo "$code $u" >> /tmp/purge_fail.txt; exit 1 ;;
             esac
@@ -291,45 +315,133 @@ jobs:
           echo "$code $u" >> /tmp/purge_fail.txt
           exit 1
           PURGE
-          chmod +x /tmp/purge_one.sh
 
           # One canary per class that this deploy actually touched. A class the deploy did not touch
           # has no canary and that is not an error: `grep` exits 1 on no match, and this used to run
           # inside a pipeline whose failure `pipefail` propagated into an assignment that `bash -e`
           # then treated as fatal -- a deploy that changed no sitemap and no llms.txt killed the step
           # before a single URL was purged. Each probe is guarded individually.
-          pick() { cut -f1 all.tsv | grep -E "$1" 2>/dev/null | head -1 || true; }
-          html=$(cut -f1 all.tsv | grep -E '/$' 2>/dev/null || true)
-          deepest() { [ -n "$html" ] && printf '%s\n' "$html" | awk '{print gsub("/","/"), $0}' | sort $1 | head -1 | cut -d' ' -f2- || true; }
-          canaries="$( { deepest -n
-                         deepest -rn
-                         [ -n "$html" ] && printf '%s\n' "$html" | grep -E '^https://products\.aspose\.com/slides/[a-z]{2}(-[a-z]+)?/' 2>/dev/null | head -1 || true
-                         pick '/index\.md$'
-                         pick '/llms\.txt$'
-                         pick '/slides/(css|js)/'
-                         pick '/sitemap\.xml$'
-                       } | sed '/^$/d' | sort -u )"
-          echo "canaries:"; printf '%s\n' "$canaries" | sed 's/^/  /'
+          pick() { cut -f1 plan/all.tsv | grep -E "$1" 2>/dev/null | head -1 || true; }
+          html=$(cut -f1 plan/all.tsv | grep -E '/$' 2>/dev/null || true)
+          deepest() { [ -n "$html" ] && printf '%s\n' "$html" | awk '{print gsub("/","/"), $0}' | sort $1 2>/dev/null | head -1 | cut -d' ' -f2- || true; }
+          { deepest -n
+            deepest -rn
+            [ -n "$html" ] && printf '%s\n' "$html" 2>/dev/null | grep -E '^https://products\.aspose\.com/slides/[a-z]{2}(-[a-z]+)?/' 2>/dev/null | head -1 || true
+            pick '/index\.md$'
+            pick '/llms\.txt$'
+            pick '/slides/(css|js)/'
+            pick '/sitemap\.xml$'
+          } | sed '/^$/d' | sort -u > plan/canaries.txt
+          echo "canaries:"; sed 's/^/  /' plan/canaries.txt
 
           echo "--- before"
-          for u in $canaries; do echo "  $(edge "$u")  $u"; done
+          while read -r u; do echo "  $(bash plan/edge.sh "$u")  $u"; done < plan/canaries.txt
 
-          # Always per URL, over the whole changed set. There is no cheaper mechanism that works.
+      - name: Upload the purge plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: purge-plan
+          path: plan/
+
+  purge:
+    name: Purge shard ${{ matrix.shard }}
+    needs: plan
+    if: ${{ always() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    permissions:
+      actions: read
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: ${{ fromJson(needs.plan.outputs.shards) }}
+    steps:
+      - name: Download the purge plan
+        uses: actions/download-artifact@v4
+        with:
+          name: purge-plan
+          path: plan
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Download what earlier attempts of this shard purged
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          path: done
+          pattern: purged-${{ matrix.shard }}-*
+          merge-multiple: true
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Purge per URL
+        timeout-minutes: 330
+        env:
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          PURGE_PARALLEL: "12"
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -uo pipefail
+          mkdir -p purged
+          sort -u "plan/shards/${SHARD}.txt" > /tmp/shard.txt
+          cat done/*.txt 2>/dev/null | sort -u > /tmp/done.txt || true
+          comm -23 /tmp/shard.txt /tmp/done.txt > /tmp/todo.txt
+          n=$(wc -l < /tmp/todo.txt)
+          echo "shard ${SHARD}: $(wc -l < /tmp/shard.txt) URLs, $(comm -12 /tmp/shard.txt /tmp/done.txt | wc -l) purged by an earlier attempt, $n to purge"
+          [ "$n" -eq 0 ] && exit 0
+
           : > /tmp/purge_fail.txt
           # `|| true` is load-bearing: xargs exits 123 when ANY child exits non-zero, and under
           # `bash -e` that kills the step before the failure count below is ever read -- which is the
           # whole point of collecting failures in a file rather than letting one abort the run.
           # Measured: a deploy with 3,024 changed URLs died on exit 123 having purged most of them
           # and verified none of them.
-          cut -f1 all.tsv | xargs -r -P "$PURGE_PARALLEL" -n 1 /tmp/purge_one.sh || true
+          PURGED_LOG="$PWD/purged/purged.txt" xargs -r -P "$PURGE_PARALLEL" -n 1 bash plan/purge_one.sh < /tmp/todo.txt || true
           fail=$(wc -l < /tmp/purge_fail.txt)
-          echo "purge mode: per-URL over the whole changed set, ${PURGE_PARALLEL} at a time"
+          echo "purge mode: per-URL, ${PURGE_PARALLEL} at a time"
           echo "purge calls that never returned 2xx: $fail"
           [ "$fail" -gt 0 ] && head -20 /tmp/purge_fail.txt | sed 's/^/  /'
           if [ "$fail" -ge "$n" ]; then
             echo "::error title=Every purge call failed::${fail} of ${n} calls never returned 2xx. The gateway or the key is the problem, not the cache."
             exit 1
           fi
+
+      - name: Upload what this attempt purged
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: purged-${{ matrix.shard }}-${{ github.run_attempt }}
+          path: purged/
+          if-no-files-found: ignore
+
+  verify:
+    name: Verify the edge serves the new bytes
+    needs: [plan, purge]
+    if: ${{ always() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Download the purge plan
+        uses: actions/download-artifact@v4
+        with:
+          name: purge-plan
+          path: plan
+          run-id: ${{ github.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify by byte length
+        env:
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          PURGE_PARALLEL: "24"
+          SAMPLE_SIZE: "50"
+          SAMPLE_PASS_PCT: "95"
+          SETTLE_SECONDS: "25"
+        run: |
+          set -uo pipefail
+          : > /tmp/purge_fail.txt
+          canaries="$(cat plan/canaries.txt)"
 
           # Eviction is eventually consistent. Measured: 6 s after a successful purge the old object
           # was still being served, 15 s after it was not. The previous 8 s sat inside that window and
@@ -339,28 +451,28 @@ jobs:
           verify() {  # -> writes $bad, $checked, $ok
             bad=""; checked=0; ok=0
             for u in $1; do
-              want="$(awk -F'\t' -v u="$u" '$1==u{print $2; exit}' all.tsv)"
+              want="$(awk -F'\t' -v u="$u" '$1==u{print $2; exit}' plan/all.tsv)"
               [ -n "$want" ] || continue
-              got="$(edge "$u")"
+              got="$(bash plan/edge.sh "$u")"
               code=$(printf '%s' "$got" | cut -f1); len=$(printf '%s' "$got" | cut -f2)
               checked=$((checked+1))
               if [ "$code" = "200" ] && [ "$len" = "$want" ]; then ok=$((ok+1)); else bad="$bad $u"; fi
             done
           }
 
-          sample="$(cut -f1 all.tsv | shuf -n "$SAMPLE_SIZE")"
+          sample="$(cut -f1 plan/all.tsv | shuf -n "$SAMPLE_SIZE")"
           watch="$(printf '%s\n' $canaries $sample | sed '/^$/d' | sort -u)"
 
           echo "--- after"
           verify "$watch"
-          echo "verified $ok of $checked; edge PoP: $(edge 'https://products.aspose.com/slides/' | cut -f4)"
+          echo "verified $ok of $checked; edge PoP: $(bash plan/edge.sh 'https://products.aspose.com/slides/' | cut -f4)"
 
           # One purge does not always clear every cache node: several URLs needed a second call before
           # they served the new bytes consistently. Re-purge what is still wrong and look again, rather
           # than failing on the first read.
           if [ -n "$bad" ]; then
             echo "--- re-purging $(printf '%s\n' $bad | wc -w) URLs that were still stale"
-            printf '%s\n' $bad | xargs -r -P "$PURGE_PARALLEL" -n 1 /tmp/purge_one.sh || true
+            printf '%s\n' $bad | xargs -r -P "$PURGE_PARALLEL" -n 1 bash plan/purge_one.sh || true
             sleep "$SETTLE_SECONDS"
             verify "$watch"
             echo "after the second pass: verified $ok of $checked"
@@ -381,3 +493,7 @@ jobs:
 
           echo "Edge verified: ${ok} of ${checked} URLs serve the byte length this build produced."
           echo "NOTE: observed from one point of presence only. This is not a statement about the global edge."
+          if [ "${{ needs.purge.result }}" != "success" ]; then
+            echo "::error title=Some purge shards did not finish::Re-run the failed jobs of this run; each shard skips the URLs an earlier attempt purged."
+            exit 1
+          fi

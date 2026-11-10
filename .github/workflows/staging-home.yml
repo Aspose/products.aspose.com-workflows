@@ -50,36 +50,31 @@ jobs:
       run: mv /home/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/home-ru.sitemap public/ru-sitemaps.xml;
 
     # The old AWS bucket (s3://products-qa.aspose.com, us-west-2) no longer exists
-    # (hugo deploy -> NoSuchBucket). QA is served from Ceph; same method as
-    # production-home.yml. No --delete: the QA bucket is shared with other families.
-    # Note: if Ceph rejects the credentials (InvalidAccessKeyId, empty message),
-    # aws-cli 2.39 crashes with "'NoneType' is not a container or iterable".
+    # (hugo deploy -> NoSuchBucket). QA is served from a separate Ceph cluster, in a
+    # bucket named with hyphens (products-qa-aspose-com), not the dotted domain.
+    # No --delete: the QA bucket is shared with other families.
+    # NOTE: the public data endpoint for GitHub-hosted runners is s3-qa.dynabic.com.
+    # The admin hostname (s3-admin-qa.dynabic.com) only resolves over VPN and is not
+    # reachable here, so it must not be used for this step.
+    # NOTE: when Ceph rejects a request with an empty error message, aws-cli 2.39
+    # crashes with "'NoneType' is not a container or iterable".
     - name: Sync to Ceph QA bucket
       run: |
         set -euo pipefail
-        aws s3 sync ./public/ s3://products-qa.aspose.com/ \
-          --endpoint-url "$AWS_ENDPOINT_URL" || {
-          set +e +o pipefail
-          python3 - <<'PY'
-        import os, socket, ipaddress
-        from urllib.parse import urlparse
-        u = urlparse(os.environ.get("AWS_ENDPOINT_URL", ""))
-        print("DIAG scheme:", u.scheme or "(none)", "| has_host:", bool(u.hostname), "| port:", u.port or {"https": 443, "http": 80}.get(u.scheme))
-        try:
-            ips = {i[4][0] for i in socket.getaddrinfo(u.hostname, u.port or (443 if u.scheme == "https" else 80))}
-            print("DIAG resolves: True | private:", [ipaddress.ip_address(i).is_private for i in ips])
-            try:
-                socket.create_connection((sorted(ips)[0], u.port or (443 if u.scheme == "https" else 80)), timeout=8).close()
-                print("DIAG tcp_connect: True")
-            except Exception as e:
-                print("DIAG tcp_connect: False", type(e).__name__)
-        except Exception as e:
-            print("DIAG resolves: False", type(e).__name__)
-        PY
-          exit 1; }
+        aws s3 sync ./public/ s3://products-qa-aspose-com/ \
+          --endpoint-url "$AWS_ENDPOINT_URL" \
+          --acl public-read
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.CEPH_QA_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.CEPH_QA_SECRET_ACCESS_KEY }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.SMALLIZE_CEPH_QA_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SMALLIZE_CEPH_QA_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: us-east-1
         AWS_EC2_METADATA_DISABLED: "true"
-        AWS_ENDPOINT_URL: ${{ secrets.CEPH_QA_ENDPOINT_URL }}
+        AWS_ENDPOINT_URL: https://s3-qa.dynabic.com
+
+    - name: Purge BunnyCDN
+      if: success()
+      run: |
+        curl -siG \
+          -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+          --data-urlencode "url=https://products-qa.aspose.com" \
+          "https://api.dynabic.com/bn/purge?async=true" || true

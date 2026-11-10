@@ -18,7 +18,7 @@ jobs:
     - name: Setup Hugo
       uses: peaceiris/actions-hugo@v2
       with:
-          hugo-version: 'latest'
+          hugo-version: '0.110.0'
           extended: true
     - name: Install autoprefixer
       run:  npm install -D --save autoprefixer
@@ -49,8 +49,32 @@ jobs:
     - name: Prepare public folder
       run: mv /home/runner/work/products.aspose.com-workflows/products.aspose.com-workflows/home-ru.sitemap public/ru-sitemaps.xml;
 
-    - name: Deploy Home to S3
-      run: hugo deploy --config "configs/home.toml" --maxDeletes=0 --target "staging" --force
+    # The old AWS bucket (s3://products-qa.aspose.com, us-west-2) no longer exists
+    # (hugo deploy -> NoSuchBucket). QA is served from a separate Ceph cluster, in a
+    # bucket named with hyphens (products-qa-aspose-com), not the dotted domain.
+    # No --delete: the QA bucket is shared with other families.
+    # NOTE: the public data endpoint for GitHub-hosted runners is s3-qa.dynabic.com.
+    # The admin hostname (s3-admin-qa.dynabic.com) only resolves over VPN and is not
+    # reachable here, so it must not be used for this step.
+    # NOTE: when Ceph rejects a request with an empty error message, aws-cli 2.39
+    # crashes with "'NoneType' is not a container or iterable".
+    - name: Sync to Ceph QA bucket
+      run: |
+        set -euo pipefail
+        aws s3 sync ./public/ s3://products-qa-aspose-com/ \
+          --endpoint-url "$AWS_ENDPOINT_URL" \
+          --acl public-read
       env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.SMALLIZE_CEPH_QA_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.SMALLIZE_CEPH_QA_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: us-east-1
+        AWS_EC2_METADATA_DISABLED: "true"
+        AWS_ENDPOINT_URL: https://s3-qa.dynabic.com
+
+    - name: Purge BunnyCDN
+      if: success()
+      run: |
+        curl -siG \
+          -H "X-Api-Key: ${{ secrets.BUNNY_API_KEY }}" \
+          --data-urlencode "url=https://products-qa.aspose.com" \
+          "https://api.dynabic.com/bn/purge?async=true" || true
